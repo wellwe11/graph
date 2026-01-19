@@ -1,0 +1,37 @@
+{
+  "cryptocurrencies": [
+    {
+      "id": "bitcoin",
+      "symbol": "BTC",
+      "name": "Bitcoin",
+      "currentPrice": 42500,
+      "color": "#F7931A",
+      "history": [
+        { "time": "10:00", "price": 42000 },
+        { "time": "11:00", "price": 42500 }
+      ]
+    },
+    {
+      "id": "ethereum",
+      "symbol": "ETH",
+      "name": "Ethereum",
+      "currentPrice": 2250,
+      "color": "#627EEA",
+      "history": [
+        { "time": "10:00", "price": 2200 },
+        { "time": "11:00", "price": 2250 }
+      ]
+    },
+    {
+      "id": "solana",
+      "symbol": "SOL",
+      "name": "Solana",
+      "currentPrice": 95,
+      "color": "#14F195",
+      "history": [
+        { "time": "10:00", "price": 90 },
+        { "time": "11:00", "price": 95 }
+      ]
+    }
+  ]
+}
