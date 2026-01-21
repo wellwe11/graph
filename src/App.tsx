@@ -1,18 +1,9 @@
 import classes from "./App.module.scss";
+import Graph from "./components/graph/graph";
 import useFetch from "./hooks/useFetch";
 
-const Graph = ({ data }) => {
-  return (
-    <div className={classes.graph}>
-      <div className={classes.container}>
-        <h1>This is a graph</h1>
-      </div>
-    </div>
-  );
-};
-
 function App() {
-  const [data, isLoading, wasSuccess] = useFetch("/data.json");
+  const [data, isLoading, error] = useFetch("/data.json");
 
   if (isLoading)
     return (
@@ -21,18 +12,14 @@ function App() {
       </div>
     );
 
-  if (!wasSuccess)
+  if (error)
     return (
       <div>
         <h1>Failed to fetch data</h1>
       </div>
     );
 
-  return (
-    <div className={classes.app}>
-      <Graph data={data} />
-    </div>
-  );
+  return <div className={classes.app}>{data && <Graph data={data} />}</div>;
 }
 
 export default App;
