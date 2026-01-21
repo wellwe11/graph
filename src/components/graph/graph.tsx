@@ -44,30 +44,10 @@ const Graph = ({ data }) => {
       .append("g")
       .attr("transform", `translate(0,${height})`)
       .style("font-size", "12px")
-      .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%H%M")))
-      .call((g) =>
-        g
-          .select(".domain")
-          .remove()
-          .selectAll(".tick text")
-          .style("stroke-opacity", 0),
-      );
+      .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%H:%M")))
+      .call((g) => g.select(".domain").remove().selectAll(".tick text"))
+      .style("stroke-opacity", 0);
     svg.selectAll(".tick text").attr("fill", "#777");
-
-    // svg.append("g").call(
-    //   d3
-    //     .axisLeft(y)
-    //     .ticks(d3.max(data.price, (d) => d.y - yMin) / 4500) // Increase/decrease to adjust visible price-points
-    //     .tickFormat((d) => {
-    //       const num: number = d;
-
-    //       if (num >= 10000) {
-    //         return `${(num / 1000).toFixed(0)}k`;
-    //       } else {
-    //         num.toString();
-    //       }
-    //     }),
-    // );
 
     // y-axis
     svg
@@ -92,7 +72,7 @@ const Graph = ({ data }) => {
       .call((g) => g.select(".domain").remove())
       .selectAll(".tick text")
       .style("fill", "#777")
-      .style("visibility", (d, i, nodes) => {
+      .style("visibility", (_, i, __) => {
         if (i === 0) {
           return "hidden";
         } else {
@@ -100,11 +80,37 @@ const Graph = ({ data }) => {
         }
       });
 
+    // x-axis grid-line
+    svg
+      .selectAll("xGrid")
+      .data(x.ticks())
+      .join("line")
+      .attr("x1", (d) => x(d))
+      .attr("x2", (d) => x(d))
+      .attr("y1", 0)
+      .attr("y2", height)
+      .attr("stroke", "#e0e0e0")
+      .attr("stroke-width", 0.5);
+
+    // y-axis grid-line
+    svg
+      .selectAll("yGrid")
+      .data(y.ticks(d3.max(data.price, (d) => d.y - yMin) / 4500).slice(1, -1))
+      .join("line")
+      .attr("x1", 0)
+      .attr("x2", width)
+      .attr("y1", (d) => y(d))
+      .attr("y2", (d) => y(d))
+      .attr("stroke", "#e0e0e0")
+      .attr("stroke-width", 0.5);
+
+    // Individual vertical line (connects y & x)
     const line = d3
       .line<{ x: number; y: number }>()
       .x((d) => x(new Date(d.x)))
       .y((d) => y(d.y));
 
+    // Vertical tracking-line
     svg
       .append("path")
       .datum(data.price)
@@ -113,7 +119,16 @@ const Graph = ({ data }) => {
       .attr("stroke-width", 2)
       .attr("d", line);
 
-    console.log(data);
+    // graph title
+    svg
+      .append("text")
+      .attr("class", "chart-title")
+      .attr("x", margin.left - 115)
+      .attr("y", margin.top - 100)
+      .style("font-size", "18px")
+      .style("font-weight", "thin")
+      .style("font-family", "sans-serif")
+      .text("Bitcoin-BTC index by time: 09:00 - 00");
   }, [data]);
 
   if (!data) return <div>Loading...</div>;
