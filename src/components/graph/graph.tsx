@@ -1,9 +1,19 @@
 import { useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import * as d3 from "d3";
+import fetchData from "../../functions/useFetch";
+
 import classes from "./graph.module.scss";
 
-const Graph = ({ data }) => {
+const Graph = () => {
   const chartContainer = useRef<HTMLDivElement | null>(null);
+
+  const { data } = useQuery({
+    queryKey: ["graphData"],
+    queryFn: () => fetchData("/data.json"),
+  });
+
+  console.log(data);
 
   useEffect(() => {
     if (!data) return;

@@ -1,25 +1,28 @@
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import classes from "./App.module.scss";
 import Graph from "./components/graph/graph";
-import useFetch from "./hooks/useFetch";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// initiate queryClient
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 5,
+    },
+  },
+});
 
 function App() {
-  const [data, isLoading, error] = useFetch("/data.json");
-
-  if (isLoading)
-    return (
-      <div>
-        <h1>Data is loading</h1>
-      </div>
-    );
-
-  if (error)
-    return (
-      <div>
-        <h1>Failed to fetch data</h1>
-      </div>
-    );
-
-  return <div className={classes.app}>{data && <Graph data={data} />}</div>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      {/* Wrap components inside of client */}
+      <div className={classes.app}>{<Graph />}</div>;
+      {/* Enable devtools visulation of queries */}
+      <ReactQueryDevtools initialIsOpen={false} />{" "}
+    </QueryClientProvider>
+  );
 }
 
 export default App;
