@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import * as d3 from "d3";
 import fetchData from "../../functions/useFetch";
 
@@ -31,6 +31,13 @@ const Graph = () => {
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // tooltip - mouse over svg
+    const tooltip = d3
+      .select("body")
+      .append("div")
+      .append("tooltip")
+      .attr("class", `${classes.tooltip}`);
 
     // Scales
     // data.price.x === date
@@ -127,6 +134,55 @@ const Graph = () => {
       .attr("stroke-width", 2)
       .attr("d", line);
 
+    // hovering svg
+    const circle = svg
+      .append("circle")
+      .attr("r", 0)
+      .attr("fill", "steelblue")
+      .style("stroke", "white")
+      .attr("opacity", 0.7)
+      .style("pointer-events", "none");
+
+    const listeningRect = svg
+      .append("rect")
+      .attr("class", classes.rect)
+      .attr("width", width)
+      .attr("height", height);
+
+    // tooltip - mousemovement tracker
+    listeningRect.on("mousemove", function (event) {
+      const [xCoord] = d3.pointer(event);
+      const x0 = x.invert(xCoord);
+      const bisectDate = d3.bisector((d) => new Date(d.x)).left;
+
+      const i = bisectDate(data.price, x0, 1);
+      const d0 = data.price[i - 1];
+      const d1 = data.price[i];
+
+      const d =
+        x0.getTime() - new Date(d0.x).getTime() >
+        new Date(d1.x).getTime() - x0.getTime()
+          ? d1
+          : d0;
+
+      circle.attr("cx", x(new Date(d.x))).attr("cy", y(d.y));
+      circle.transition().duration(50).attr("r", 5);
+
+      tooltip
+        .style("display", "block")
+        .style("left", `${x(new Date(d.x)) + 100}px`)
+        .style("top", `${y(d.y) + 75}px`)
+        .html(
+          `<strong>Time:</strong> ${new Date(d.x).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}<br><strong>Price:</strong>${d.y}`,
+        );
+    });
+
+    listeningRect.on("mouseleave", function () {
+      circle.transition().duration(50).attr("r", 0);
+
+      tooltip.style("display", "none");
+    });
+
     // graph title
     svg
       .append("text")
@@ -141,7 +197,12 @@ const Graph = () => {
 
   if (isLoading) return <div>Loading...</div>;
 
-  return <div className="chart-container" ref={chartContainer} />;
+  return (
+    <>
+      <div className="chart-container" ref={chartContainer} />;
+      <div id="slider-range" />
+    </>
+  );
 };
 
 export default Graph;
