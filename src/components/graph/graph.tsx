@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import * as d3 from "d3";
+import { sliderBottom } from "d3-simple-slider";
 import fetchData from "../../functions/useFetch";
 
 import classes from "./graph.module.scss";
@@ -44,7 +45,7 @@ const Graph = () => {
     const x = d3
       .scaleTime()
       .range([0, width])
-      .domain(d3.extent(data!.price, (d) => new Date(d.x)) as [Date, Date]);
+      .domain(d3.extent(data.price, (d) => new Date(d.x)) as [Date, Date]);
 
     // data.price.y === price
     const yMin = d3.min(data.price, (d) => d.y) as number;
@@ -125,7 +126,12 @@ const Graph = () => {
       .x((d) => x(new Date(d.x)))
       .y((d) => y(d.y));
 
-    // Vertical tracking-line
+    const area = d3
+      .area<{ x: number; y: number }>()
+      .x((d) => x(new Date(d.x)))
+      .y0(height)
+      .y1((d) => y(d.y));
+
     svg
       .append("path")
       .datum(data.price)
@@ -133,6 +139,14 @@ const Graph = () => {
       .attr("stroke", "steelblue")
       .attr("stroke-width", 2)
       .attr("d", line);
+
+    svg
+      .append("path")
+      .datum(data.price)
+      .attr("class", "area") // Add this class so your slider can find it
+      .attr("fill", "steelblue")
+      .attr("opacity", 0.2)
+      .attr("d", area);
 
     // hovering svg
     const circle = svg
@@ -183,6 +197,69 @@ const Graph = () => {
       tooltip.style("display", "none");
     });
 
+    // define sliderRange and its time-range
+    const sliderRange = sliderBottom()
+      .min(d3.min(data.price, (d) => new Date(d.x)))
+      .max(d3.max(data.price, (d) => new Date(d.x)))
+      .width(300)
+      .tickFormat(d3.timeFormat("%H:%M"))
+      .ticks(3)
+      .default([
+        d3.min(data.price, (d) => new Date(d.x)),
+        d3.max(data.price, (d) => new Date(d.x)),
+      ])
+      .fill("#85bb65");
+
+    sliderRange.on("onchange", (val) => {
+      x.domain(val);
+
+      const filteredData = data.price.filter(
+        (d) => new Date(d.x) >= val[0] && new Date(d.x) <= val[1],
+      );
+
+      svg.select(".line").datum(filteredData).attr("d", line);
+
+      svg.select(".area").attr("d", area(filteredData)); // not sure what he means by area
+
+      y.domain([0, d3.max(filteredData, (d) => d.y) as number]).nice();
+
+      svg
+        .select(".x-axis")
+        .transition()
+        .duration(300)
+        .call(
+          d3
+            .axisBottom(x)
+            .tickValues(x.ticks(d3.timeYear.every(1)))
+            .tickFormat(d3.timeFormat("%Y")),
+        );
+
+      svg
+        .select(".y-axis")
+        .transition()
+        .duration(300)
+        .call(
+          d3
+            .axisRight(y)
+            .ticks(10)
+            .tickFormat((d) => {
+              if (d <= 0) return "";
+
+              return `${d.toFixed(2)}`;
+            }),
+        );
+    });
+
+    const gRange = d3
+      .select("#slider-range")
+      .append("svg")
+      .attr("width", 500)
+      .attr("height", 100)
+      .append("g")
+      .attr("transform", `translate(90,30)`);
+
+    gRange.call(sliderRange);
+
     // graph title
     svg
       .append("text")
@@ -192,7 +269,7 @@ const Graph = () => {
       .style("font-size", "18px")
       .style("font-weight", "thin")
       .style("font-family", "sans-serif")
-      .text("Bitcoin-BTC index by time: 09:00 - 00");
+      .text("Bitcoin-BTCby times: ... : ...");
   }, [data]);
 
   if (isLoading) return <div>Loading...</div>;
