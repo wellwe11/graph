@@ -8,15 +8,13 @@ import classes from "./graph.module.scss";
 const Graph = () => {
   const chartContainer = useRef<HTMLDivElement | null>(null);
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["graphData"],
     queryFn: () => fetchData("/data.json"),
   });
 
-  console.log(data);
-
   useEffect(() => {
-    if (!data) return;
+    if (isLoading) return;
 
     // Clean chart
     d3.select(chartContainer.current).selectAll("svg").remove();
@@ -141,7 +139,7 @@ const Graph = () => {
       .text("Bitcoin-BTC index by time: 09:00 - 00");
   }, [data]);
 
-  if (!data) return <div>Loading...</div>;
+  if (isLoading) return <div>Loading...</div>;
 
   return <div className="chart-container" ref={chartContainer} />;
 };
