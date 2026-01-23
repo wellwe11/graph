@@ -6,6 +6,11 @@ import fetchData from "../../functions/useFetch";
 
 import classes from "./graph.module.scss";
 
+type Price = {
+  x: Date;
+  y: number;
+};
+
 const GraphOne = () => {
   const chartContainer = useRef<HTMLDivElement | null>(null);
 
@@ -304,6 +309,8 @@ const GraphTwo = () => {
   useEffect(() => {
     if (!chartContainer.current || isLoading) return;
 
+    d3.select(chartContainer.current).selectAll("svg").remove();
+
     const refEl = chartContainer?.current;
 
     const svg = d3
@@ -314,13 +321,8 @@ const GraphTwo = () => {
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.right})`);
 
-    console.log(data);
-
-    x.domain(d3.extent(data.price, (d) => d.x)).nice() as [number, Date];
-    y.domain([0, d3.max(data.price, (d) => d.y) as number]).nice() as [
-      number,
-      number,
-    ];
+    x.domain([data.from, data.to]) as [Date, Date];
+    y.domain([0, d3.max(data.price, (d: Price) => d.y)]);
 
     svg
       .append("g")
@@ -336,6 +338,34 @@ const GraphTwo = () => {
           return `${d.toFixed(2)}`;
         }),
       );
+
+    const line = d3
+      .line()
+      .x((d: Price) => x(d.x))
+      .y((d: Price) => y(d.y));
+
+    const area = d3
+      .area()
+      .x((d: Price) => x(d.x))
+      .y0(height)
+      .y1((d: Price) => y(d.y));
+
+    svg
+      .append("path")
+      .datum(data.price)
+      .attr("class", "area")
+      .attr("d", area)
+      .style("fill", "#85bb65")
+      .style("opacity", 0.5);
+
+    svg
+      .append("path")
+      .datum(data.price)
+      .attr("class", "line")
+      .attr("fill", "none")
+      .attr("stroke", "#85bb65")
+      .attr("stroke-width", 1)
+      .attr("d", line);
   }, [
     data,
     isLoading,
@@ -349,11 +379,7 @@ const GraphTwo = () => {
     y,
   ]);
 
-  return (
-    <div ref={chartContainer}>
-      <h1>Hello</h1>
-    </div>
-  );
+  return <div ref={chartContainer}></div>;
 };
 
 const Graph = () => {
