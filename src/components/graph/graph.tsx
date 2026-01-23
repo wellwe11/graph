@@ -322,7 +322,11 @@ const GraphTwo = () => {
       .attr("transform", `translate(${margin.left},${margin.right})`);
 
     x.domain([data.from, data.to]) as [Date, Date];
-    y.domain([0, d3.max(data.price, (d: Price) => d.y)]);
+
+    const yMin = (d3.min(data.price, (d) => d.y) - 20000) as number;
+    const yMax = (d3.max(data.price, (d) => d.y) + 20000) as number;
+
+    y.domain([yMin, yMax]);
 
     svg
       .append("g")
