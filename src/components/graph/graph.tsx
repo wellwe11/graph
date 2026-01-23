@@ -326,6 +326,16 @@ const GraphTwo = () => {
       .append("g")
       .attr("transform", `translate(0,${height})`)
       .call(d3.axisBottom(x));
+
+    svg
+      .append("g")
+      .attr("transform", `translate(${width},0)`)
+      .call(
+        d3.axisRight(y).tickFormat((d) => {
+          if (isNaN(d)) return "";
+          return `${d.toFixed(2)}`;
+        }),
+      );
   }, [
     data,
     isLoading,
