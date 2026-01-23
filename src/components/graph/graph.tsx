@@ -6,7 +6,7 @@ import fetchData from "../../functions/useFetch";
 
 import classes from "./graph.module.scss";
 
-const Graph = () => {
+const GraphOne = () => {
   const chartContainer = useRef<HTMLDivElement | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -278,6 +278,79 @@ const Graph = () => {
     <>
       <div className="chart-container" ref={chartContainer} />;
       <div id="slider-range" />
+    </>
+  );
+};
+
+const GraphTwo = () => {
+  const { data, isLoading } = useQuery({
+    queryKey: ["graphData"],
+    queryFn: () => fetchData("/data.json"),
+    select: (rawData) => ({
+      ...rawData,
+      price: rawData.price.map((d: any) => ({ ...d, x: new Date(d.x) })),
+    }),
+  });
+
+  const chartContainer = useRef<HTMLDivElement | null>(null);
+
+  const margin = { top: 70, right: 60, bottom: 50, left: 80 };
+  const width = 1400 - margin.left - margin.right;
+  const height = 800 - margin.top - margin.bottom;
+
+  const x = d3.scaleTime().range([0, width]);
+  const y = d3.scaleLinear().range([height, 0]);
+
+  useEffect(() => {
+    if (!chartContainer.current || isLoading) return;
+
+    const refEl = chartContainer?.current;
+
+    const svg = d3
+      .select(refEl)
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.right})`);
+
+    console.log(data);
+
+    x.domain(d3.extent(data.price, (d) => d.x)).nice() as [number, Date];
+    y.domain([0, d3.max(data.price, (d) => d.y) as number]).nice() as [
+      number,
+      number,
+    ];
+
+    svg
+      .append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x));
+  }, [
+    data,
+    isLoading,
+    height,
+    width,
+    margin.left,
+    margin.right,
+    margin.bottom,
+    margin.top,
+    x,
+    y,
+  ]);
+
+  return (
+    <div ref={chartContainer}>
+      <h1>Hello</h1>
+    </div>
+  );
+};
+
+const Graph = () => {
+  return (
+    <>
+      <GraphTwo />
+      {/* <GraphOne /> */}
     </>
   );
 };
