@@ -15,33 +15,26 @@ const ColorSlider = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValue(Number(e.target.value));
   };
+  const [viewVal, setViewVal] = useState(false);
 
+  // value-div. Calculate margin left to follow current set of value
   const percent = (value / maxVal) * 170;
 
-  // update to show toolkit below that displays current value
-
   return (
-    <div>
-      <label htmlFor="slider" style={{ padding: "20px" }}>
-        Color slider
-      </label>
+    <div
+      onMouseEnter={() => setViewVal(true)}
+      onMouseLeave={() => setViewVal(false)}
+    >
+      <label htmlFor="slider">Color slider</label>
       <div style={{ position: "relative" }}>
         <div
+          className="absolute -bottom-8.5 px-2 py-1 mb-2 text-xs font-bold text-white transition-opacity bg-gray-500 rounded -translate-x-1/2 pointer-events-none"
           style={{
-            position: "absolute",
             left: `calc(${percent}% - 12px)`,
-            transform: `translateX(-50%)`,
-            top: "20px",
-            backgroundColor: "#97abcb",
-            color: "white",
-            padding: "4px 8px",
-            borderRadius: "4px",
-            fontSize: "12px",
-            whiteSpace: "nowrap",
-            pointerEvents: "none",
+            opacity: `${viewVal ? "1" : "0"}`,
           }}
         >
-          {value}
+          {Math.round(value)}
         </div>
         <input
           id="slider"
@@ -50,19 +43,74 @@ const ColorSlider = ({
           max={maxVal * 0.6}
           value={value}
           onChange={handleChange}
-          style={{ display: "block", width: "100%", cursor: "pointer" }}
+          className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer 
+          accent-gray-600
+          [&::-webkit-slider-thumb]:appearance-none 
+          [&::-webkit-slider-thumb]:w-5 
+          [&::-webkit-slider-thumb]:h-5 
+          [&::-webkit-slider-thumb]:rounded-full 
+          [&::-webkit-slider-thumb]:bg-gray-600 
+          [&::-webkit-slider-thumb]:border-2 
+          [&::-webkit-slider-thumb]:border-white 
+          "
         />
       </div>
     </div>
   );
 };
 
-const generateHeatmapData = (names: string[]) => {
+const DaysSelect = ({ activeDay, setActiveDay }) => {
+  const [displayDays, setDisplayDays] = useState(false);
+  const [label, setLabel] = useState(() => activeDay);
+
+  const days = [
+    { label: "1 day", value: 1 },
+    { label: "1 week", value: 7 },
+    { label: "2 week", value: 14 },
+    { label: "30 day", value: 30 },
+    { label: "3 month", value: 90 },
+    { label: "6 month", value: 182 },
+    { label: "1 year", value: 365 },
+  ];
+
+  return (
+    <div
+      onMouseLeave={() => setDisplayDays(false)}
+      className="relative z-10 w-fit"
+    >
+      <button className="cursor-pointer" onClick={() => setDisplayDays(true)}>
+        {label}
+      </button>
+      <div
+        className="absolute bg-white flex flex-col items-left w-20"
+        style={{
+          opacity: `${displayDays ? "1" : "0"}`,
+          visibility: `${displayDays ? "visible" : "hidden"}`,
+        }}
+      >
+        {days.map(({ label, value }) => (
+          <button
+            key={value}
+            className="cursor-pointer text-left"
+            onClick={() => {
+              setActiveDay(value);
+              setDisplayDays(false);
+              setLabel(label);
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const generateHeatmapData = (names: string[], days = 90) => {
   const data = [];
   const today = new Date();
-  const dataSize = 60;
 
-  for (let i = 0; i < dataSize; i++) {
+  for (let i = 0; i < days; i++) {
     const date = d3.timeDay.offset(today, -i);
 
     names.forEach((name) => {
@@ -85,6 +133,24 @@ const HeatMap = () => {
     SVGSVGElement,
     SVGSVGElement
   > | null>(null);
+
+  /** Change amount of cells & time-labels depending on data-days
+   * 1 day: {
+   * times: 11, 13, 15, 17, 21, 23, 01, 03, 05, 07, 09
+   * format: DD, tt:tt
+   * cells: 24
+   * },
+   * 1 week: {
+   * times: 18, 10, 02, 18, 10, 02, 18, 10, 02, 18, 10
+   * format: DD, tt:tt
+   * cells: 21
+   * },
+   * 2 week:
+   * 30 day:
+   * 3 month:
+   * 6 month:
+   * 1 year:
+   */
 
   // placeholder names
   const placeholderN = useMemo(
@@ -123,8 +189,12 @@ const HeatMap = () => {
     [],
   );
 
+  const [dataDays, setDataDays] = useState(90);
   // current placeholder-data
-  const data = useMemo(() => generateHeatmapData(placeholderN), []);
+  const data = useMemo(
+    () => generateHeatmapData(placeholderN, dataDays),
+    [dataDays, placeholderN],
+  );
 
   const margins = useMemo(
     () => ({ top: 50, bottom: 50, left: 50, right: 50 }),
@@ -213,7 +283,7 @@ const HeatMap = () => {
       .remove();
 
     const xTickValues = uniqueDates
-      .filter((d, i) => i % 3 === 0)
+      .filter((d, i) => i % Math.round(data.length / 500) === 0)
       .map((d) => d.getTime().toString());
 
     chart
@@ -351,25 +421,29 @@ const HeatMap = () => {
     margins.left,
     margins.right,
     placeholderN,
-    // colorScale // Removede because it forces entire SVG to rerender. Will need to further seperate concerns in future
+    // colorScale // Removed because it forces entire SVG to re-render. Will need to further seperate concerns in future
   ]);
 
   useEffect(() => {
     if (!cellsRef.current) return;
 
-    cellsRef.current
-      .interrupt()
-      .transition()
-      .duration(10)
-      .attr("fill", function () {
-        const value = parseFloat(d3.select(this).attr("data-value"));
-        return colorScale(value);
-      });
+    const timer = setTimeout(() => {
+      cellsRef.current
+        .interrupt()
+        .transition()
+        .attr("fill", function () {
+          const value = parseFloat(d3.select(this).attr("data-value"));
+          return colorScale(value);
+        });
+    }, 25); // Adjust for quicker color-change-update. Currently 25 to avoid unnecessary throttling
+
+    return () => clearTimeout(timer);
   }, [colorScale]);
 
   return (
     <div>
       <div style={{ width: "200px", marginLeft: margins.left }}>
+        <DaysSelect activeDay={dataDays} setActiveDay={setDataDays} />
         <ColorSlider
           value={colorSliderValue}
           setValue={setColorSliderValue}
