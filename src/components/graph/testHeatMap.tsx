@@ -2,30 +2,57 @@ import * as d3 from "d3";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import classes from "./graph.module.scss";
 
-// next step:
-// Create a color-side
-// Essentially, a slider which increases/decreases the color-scheme
-
 // Updates minvalue for what turns orange/red ('high' on heatmap)
-const ColorSlider = ({ value, setValue, maxVal = 700 }: { maxVal: number }) => {
+const ColorSlider = ({
+  value,
+  setValue,
+  maxVal = 700,
+}: {
+  value: number;
+  setValue: React.Dispatch<React.SetStateAction<number>>;
+  maxVal: number;
+}) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValue(Number(e.target.value));
   };
+
+  const percent = (value / maxVal) * 170;
+
+  // update to show toolkit below that displays current value
 
   return (
     <div>
       <label htmlFor="slider" style={{ padding: "20px" }}>
         Color slider
       </label>
-      <input
-        id="slider"
-        type="range"
-        min="100"
-        max={maxVal / 2}
-        value={value}
-        onChange={handleChange}
-        style={{ display: "block", width: "100%", cursor: "pointer" }}
-      />
+      <div style={{ position: "relative" }}>
+        <div
+          style={{
+            position: "absolute",
+            left: `calc(${percent}% - 12px)`,
+            transform: `translateX(-50%)`,
+            top: "20px",
+            backgroundColor: "#97abcb",
+            color: "white",
+            padding: "4px 8px",
+            borderRadius: "4px",
+            fontSize: "12px",
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+          }}
+        >
+          {value}
+        </div>
+        <input
+          id="slider"
+          type="range"
+          min="100"
+          max={maxVal * 0.6}
+          value={value}
+          onChange={handleChange}
+          style={{ display: "block", width: "100%", cursor: "pointer" }}
+        />
+      </div>
     </div>
   );
 };
@@ -52,9 +79,12 @@ const generateHeatmapData = (names: string[]) => {
 
 const HeatMap = () => {
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const cellsRef = useRef<d3.Selection<SVGRectElement, any, any, any> | null>(
-    null,
-  );
+  const cellsRef = useRef<d3.Selection<
+    SVGRectElement,
+    SVGSVGElement,
+    SVGSVGElement,
+    SVGSVGElement
+  > | null>(null);
 
   // placeholder names
   const placeholderN = useMemo(
@@ -109,14 +139,14 @@ const HeatMap = () => {
   // Find the max value for the domain
   const maxValue = d3.max(data, (d) => d.value) || 1000;
 
-  const defaultSliderValue = maxValue * 0.2;
+  const defaultSliderValue = maxValue * 0.4;
   const [colorSliderValue, setColorSliderValue] =
     useState<number>(defaultSliderValue);
 
   const colorSchemeValues = useMemo(
     () => ({
-      low: maxValue - colorSliderValue / 0.5,
-      medium: maxValue - colorSliderValue,
+      low: maxValue - colorSliderValue * 0.5,
+      medium: maxValue - colorSliderValue * 1.5,
     }),
     [colorSliderValue, maxValue],
   );
@@ -126,7 +156,7 @@ const HeatMap = () => {
       d3
         .scaleLinear<string>()
         .domain([0, colorSchemeValues.low, colorSchemeValues.medium, maxValue])
-        .range(["#3cdbff", "#6bff90", "#ffbf5e", "#ff0000"]),
+        .range(["#38cdff", "#38ff38", "#ffe138", "#ff6d38"]),
     [colorSchemeValues, maxValue],
   );
 
@@ -328,8 +358,9 @@ const HeatMap = () => {
     if (!cellsRef.current) return;
 
     cellsRef.current
+      .interrupt()
       .transition()
-      .duration(300)
+      .duration(10)
       .attr("fill", function () {
         const value = parseFloat(d3.select(this).attr("data-value"));
         return colorScale(value);
