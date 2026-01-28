@@ -139,43 +139,45 @@ const HeatMap = () => {
     () => [
       "BTC",
       "ETH",
-      "Doge",
-      "NGP",
-      "RNG",
-      "BPN",
-      "USD",
-      "IDK",
-      "WOO",
+      "USDT",
+      "BNB",
+      "SOL",
+      "XRP",
+      "USDC",
+      "ADA",
+      "STETH",
+      "AVAX",
       "DOGE",
-      "ASD",
-      "BTW",
-      "WTF",
-      "EYY",
-      "asd",
-      "djiqbnwd",
-      "asdhb",
-      "asgdfh",
-      "dwq",
-      "asdq",
-      "asdq",
-      "qwqert",
-      "wqefh",
-      "jgew",
-      "_mbv",
-      "qq12",
-      "vfdj",
-      "sdlcv",
-      "lkjdf",
-      "c,vlb",
+      "DOT",
+      "TRX",
+      "LINK",
+      "WBTC",
+      "MATIC",
+      "SHIB",
+      "TON",
+      "DAI",
+      "LTC",
+      "BCH",
+      "UNI",
+      "LEO",
+      "NEAR",
+      "OP",
+      "APT",
+      "ARB",
+      "XLM",
+      "OKB",
+      "LDO",
     ],
     [],
   );
 
+  // DaysSelect dropdown selector - displays data from today - dataKeys
   const [dataDays, setDataDays] = useState(90);
 
   /** Important note for future updates
    * In theory, the only thing that you need to update is Data.
-   * Each object needs the following format:
+   * Currently, stale data is created using generateHeatmapData.
+   * Only requirement for data is to have the following format:
    * {
     "coin": "someCoin", 
     "date": "2026-01-21T10:54:53.426Z", 
@@ -183,15 +185,21 @@ const HeatMap = () => {
     }
    * This is easy to confingure in code as well. 
    * If date is in format Unix Timestamp: "timestamp": 1739777800000", simply update
-   * uniqueDates to handle them with a new Date format. 
+   * uniqueDates to handle them with a new Date() format. 
+   * There might be minor adjustments needed, but most visualisation should be dynamic. This includes:
+   * Colors, 
+   * x-axis,
+   * y-axis,
+   * tooltip
+   * slider
+   * drop-down menu: DaysSelect
    */
+
   // current placeholder-data
   const data = useMemo(
     () => generateHeatmapData(placeholderN, dataDays),
     [dataDays, placeholderN],
   );
-
-  console.log(data);
 
   const margins = useMemo(
     () => ({ top: 50, bottom: 50, left: 50, right: 50 }),
@@ -199,7 +207,7 @@ const HeatMap = () => {
   );
 
   const height = 500;
-  const width = 900;
+  const width = 1200;
   const innerWidth = width - margins.left - margins.right;
   const innerHeight = height - margins.top - margins.bottom;
 
@@ -244,13 +252,15 @@ const HeatMap = () => {
       .map((time) => new Date(time))
       .sort((a, b) => a.getTime() - b.getTime());
 
-    console.log(uniqueDates);
+    const cellWidth = innerWidth / uniqueDates.length;
 
     const x = d3
-      .scaleBand()
-      .domain(uniqueDates.map((d) => d.getTime().toString()))
-      .range([0, innerWidth])
-      .padding(0);
+      .scaleTime()
+      .domain([
+        uniqueDates[0],
+        d3.timeDay.offset(uniqueDates[uniqueDates.length - 1], 1),
+      ])
+      .range([0, innerWidth]);
 
     const y = d3
       .scaleBand()
@@ -263,13 +273,12 @@ const HeatMap = () => {
       .data(data)
       .join("rect")
       .attr("class", "cell")
-      .attr("x", (d) => x(d.date.getTime().toString())!)
+      .attr("x", (d) => x(d.date)!)
       .attr("y", (d) => y(d.coin)!)
-      .attr("width", x.bandwidth() + 1)
-      .attr("height", y.bandwidth() + 1)
+      .attr("width", cellWidth)
+      .attr("height", y.bandwidth())
       .attr("data-value", (d) => d.value)
-      .attr("fill", (d) => colorScale(d.value))
-      .attr("rx", 0);
+      .attr("fill", (d) => colorScale(d.value));
 
     chart
       .append("g")
@@ -299,51 +308,71 @@ const HeatMap = () => {
      * 1 year:
      */
 
-    const numberOfTicks = 20;
-    const xTickValues = d3.range(0, numberOfTicks).map((i) => {
-      const index = Math.floor(
-        (i / (numberOfTicks - 1)) * (uniqueDates.length - 1),
-      );
+    let interval;
+    let tickFormat;
 
-      return uniqueDates[index].getTime().toString();
-    });
+    if (dataDays <= 1) {
+      interval = d3.timeHour.every(4);
+      tickFormat = (d) => d3.timeFormat("%H:%M")(d);
+    } else if (dataDays <= 7) {
+      interval = d3.timeHour.every(30);
+      tickFormat = (d) => {
+        const date = d as Date;
 
-    console.log(xTickValues);
+        return d3.timeFormat("%d %b %H:%M")(date);
+      };
+    } else if (dataDays <= 14) {
+      interval = d3.timeDay.every(1);
+      tickFormat = (d) => d3.timeFormat("%d %b")(d);
+    } else if (dataDays <= 30) {
+      interval = d3.timeDay.every(2);
+      tickFormat = (d) => d3.timeFormat("%d %b")(d);
+    } else if (dataDays <= 90) {
+      interval = d3.timeDay.every(10);
+      tickFormat = (d) => d3.timeFormat("%d %b")(d);
+    } else if (dataDays <= 182) {
+      interval = d3.timeDay.every(18);
+      tickFormat = (d) => d3.timeFormat("%d %b")(d);
+    } else {
+      interval = d3.timeMonth.every(1);
+      tickFormat = (d) => d3.timeFormat("%b %Y")(d);
+    }
+
+    const filteredTicks = interval.range(
+      uniqueDates[0],
+      d3.timeDay.offset(uniqueDates[uniqueDates.length - 1]),
+    );
+
     chart
       .append("g")
-      .attr("transform", `translate(0, ${innerHeight})`)
+      .attr("transform", `translate(0,${innerHeight})`)
       .call(
         d3
           .axisBottom(x)
-          .tickValues(xTickValues)
-          .tickFormat((d) => {
-            const date = new Date(parseInt(d));
-
-            if (uniqueDates.length <= 7) {
-              return d3.timeFormat("%d - %H:%M")(date);
-            }
-
-            return d3.timeFormat("%d %b")(date);
-          })
+          .tickValues(filteredTicks)
+          .tickFormat(tickFormat)
           .tickSize(0),
       )
       .call((g) => g.select(".domain").remove())
       .attr("color", "#888")
       .selectAll("text")
-      .style("font-size", "10px");
+      .style("font-size", "10px")
+      .style("text-anchor", "start");
 
     const listeningRect = chart
       .append("rect")
       .attr("class", classes.rect)
       .attr("width", innerWidth)
-      .attr("height", innerHeight);
+      .attr("height", innerHeight)
+      .attr("x", 0)
+      .attr("y", 0);
 
     const highlightX = chart
       .append("line")
       .attr("class", classes.highlightLine)
       .attr("id", "tooltip-line-x")
       .attr("stroke", "white")
-      .attr("stroke-width", x.bandwidth())
+      .attr("stroke-width", cellWidth)
       .style("pointer-events", "none")
       .style("opacity", 0);
 
@@ -380,57 +409,58 @@ const HeatMap = () => {
       .on("mousemove", (event) => {
         const [mouseX, mouseY] = d3.pointer(event);
 
-        const dateIndex = Math.floor(mouseX / x.bandwidth());
-        const hoverDate = uniqueDates[dateIndex];
+        const dateAtMouse = x.invert(mouseX);
 
-        if (!hoverDate) return;
+        const bisect = d3.bisector((d: Date) => d).left;
+        const index = bisect(uniqueDates, dateAtMouse);
 
-        const snappedX = x(hoverDate.getTime().toString());
+        const snappedDate = uniqueDates[Math.max(0, index - 1)];
+        if (!snappedDate) return;
 
-        const index = Math.floor(mouseY / y.step());
-        const coinAtMouse = y.domain()[index];
+        const snappedX = x(snappedDate);
 
+        const coinIndex = Math.floor(
+          mouseY / (innerHeight / placeholderN.length),
+        );
+        const coinAtMouse = placeholderN[coinIndex];
         if (!coinAtMouse) return;
-
         const snappedY = y(coinAtMouse)! + y.bandwidth() / 2;
 
-        highlightX
-
-          .transition()
-          .duration(30)
-          .style("opacity", 0.4)
-          .attr("x1", snappedX + x.bandwidth() / 2)
-          .attr("x2", snappedX + x.bandwidth() / 2)
-          .attr("y1", 0)
-          .attr("y2", innerHeight);
+        const centerX = snappedX + cellWidth / 2;
 
         crosshairX
-
           .transition()
           .duration(75)
           .ease(d3.easeLinear)
           .style("opacity", 1)
-          .attr("x1", snappedX + x.bandwidth() / 2)
-          .attr("x2", snappedX + x.bandwidth() / 2)
+          .attr("x1", centerX)
+          .attr("x2", centerX)
           .attr("y1", 0)
           .attr("y2", innerHeight);
 
-        highlightY
-
+        highlightX
           .transition()
           .duration(30)
           .style("opacity", 0.4)
+          .attr("x1", centerX)
+          .attr("x2", centerX)
+          .attr("y1", 0)
+          .attr("y2", innerWidth);
+
+        crosshairY
+          .transition()
+          .duration(75)
+          .ease(d3.easeLinear)
+          .style("opacity", 1)
           .attr("y1", snappedY)
           .attr("y2", snappedY)
           .attr("x1", 0)
           .attr("x2", innerWidth);
 
-        crosshairY
-
+        highlightY
           .transition()
-          .duration(75)
-          .ease(d3.easeLinear)
-          .style("opacity", 1)
+          .duration(30)
+          .style("opacity", 0.4)
           .attr("y1", snappedY)
           .attr("y2", snappedY)
           .attr("x1", 0)
