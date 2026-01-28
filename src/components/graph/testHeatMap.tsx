@@ -134,24 +134,6 @@ const HeatMap = () => {
     SVGSVGElement
   > | null>(null);
 
-  /** Change amount of cells & time-labels depending on data-days
-   * 1 day: {
-   * times: 11, 13, 15, 17, 21, 23, 01, 03, 05, 07, 09
-   * format: DD, tt:tt
-   * cells: 24
-   * },
-   * 1 week: {
-   * times: 18, 10, 02, 18, 10, 02, 18, 10, 02, 18, 10
-   * format: DD, tt:tt
-   * cells: 21
-   * },
-   * 2 week:
-   * 30 day:
-   * 3 month:
-   * 6 month:
-   * 1 year:
-   */
-
   // placeholder names
   const placeholderN = useMemo(
     () => [
@@ -190,11 +172,26 @@ const HeatMap = () => {
   );
 
   const [dataDays, setDataDays] = useState(90);
+
+  /** Important note for future updates
+   * In theory, the only thing that you need to update is Data.
+   * Each object needs the following format:
+   * {
+    "coin": "someCoin", 
+    "date": "2026-01-21T10:54:53.426Z", 
+    "value": 449 
+    }
+   * This is easy to confingure in code as well. 
+   * If date is in format Unix Timestamp: "timestamp": 1739777800000", simply update
+   * uniqueDates to handle them with a new Date format. 
+   */
   // current placeholder-data
   const data = useMemo(
     () => generateHeatmapData(placeholderN, dataDays),
     [dataDays, placeholderN],
   );
+
+  console.log(data);
 
   const margins = useMemo(
     () => ({ top: 50, bottom: 50, left: 50, right: 50 }),
@@ -202,7 +199,7 @@ const HeatMap = () => {
   );
 
   const height = 500;
-  const width = 1200;
+  const width = 900;
   const innerWidth = width - margins.left - margins.right;
   const innerHeight = height - margins.top - margins.bottom;
 
@@ -247,6 +244,8 @@ const HeatMap = () => {
       .map((time) => new Date(time))
       .sort((a, b) => a.getTime() - b.getTime());
 
+    console.log(uniqueDates);
+
     const x = d3
       .scaleBand()
       .domain(uniqueDates.map((d) => d.getTime().toString()))
@@ -282,10 +281,34 @@ const HeatMap = () => {
       .select(".domain")
       .remove();
 
-    const xTickValues = uniqueDates
-      .filter((d, i) => i % Math.round(data.length / 500) === 0)
-      .map((d) => d.getTime().toString());
+    /** Change amount of cells & time-labels depending on data-days
+     * 1 day: {
+     * times: 11, 13, 15, 17, 21, 23, 01, 03, 05, 07, 09
+     * format: DD, tt:tt
+     * cells: 24
+     * },
+     * 1 week: {
+     * times: 18, 10, 02, 18, 10, 02, 18, 10, 02, 18, 10
+     * format: DD, tt:tt
+     * cells: 21
+     * },
+     * 2 week:
+     * 30 day:
+     * 3 month:
+     * 6 month:
+     * 1 year:
+     */
 
+    const numberOfTicks = 20;
+    const xTickValues = d3.range(0, numberOfTicks).map((i) => {
+      const index = Math.floor(
+        (i / (numberOfTicks - 1)) * (uniqueDates.length - 1),
+      );
+
+      return uniqueDates[index].getTime().toString();
+    });
+
+    console.log(xTickValues);
     chart
       .append("g")
       .attr("transform", `translate(0, ${innerHeight})`)
@@ -293,7 +316,15 @@ const HeatMap = () => {
         d3
           .axisBottom(x)
           .tickValues(xTickValues)
-          .tickFormat((d) => d3.timeFormat("%d %b")(new Date(parseInt(d))))
+          .tickFormat((d) => {
+            const date = new Date(parseInt(d));
+
+            if (uniqueDates.length <= 7) {
+              return d3.timeFormat("%d - %H:%M")(date);
+            }
+
+            return d3.timeFormat("%d %b")(date);
+          })
           .tickSize(0),
       )
       .call((g) => g.select(".domain").remove())
