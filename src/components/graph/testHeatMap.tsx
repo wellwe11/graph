@@ -2,6 +2,33 @@ import * as d3 from "d3";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import classes from "./graph.module.scss";
 
+/**
+ * 
+ * @param param0 
+ * @returns 
+ * 
+ **  Important note for future updates
+   * In theory, the only thing that you need to update is Data. (Located inside of HeatMap)
+   * Currently, stale data is created using generateHeatmapData.
+   * Only requirement for data is to have the following format:
+   * {
+    "coin": "someCoin", 
+    "date": "2026-01-21T10:54:53.426Z", 
+    "value": 449 
+    }
+   * This is easy to confingure in code as well. 
+   * If date is in format Unix Timestamp: "timestamp": 1739777800000", simply update
+   * uniqueDates to handle them with a new Date() format. 
+   * There might be minor adjustments needed, but most visualisation should be dynamic. This includes:
+   * Colors, 
+   * x-axis,
+   * y-axis,
+   * tooltip
+   * slider
+   * drop-down menu: DaysSelect
+   * 
+ */
+
 // Updates minvalue for what turns orange/red ('high' on heatmap)
 const ColorSlider = ({
   value,
@@ -110,8 +137,25 @@ const generateHeatmapData = (names: string[], days = 90) => {
   const data = [];
   const today = new Date();
 
-  for (let i = 0; i < days; i++) {
-    const date = d3.timeDay.offset(today, -i);
+  let amountOfData;
+  let timeOffset;
+
+  if (days <= 1) {
+    amountOfData = 25;
+    timeOffset = (i) => d3.timeHour.offset(today, -i);
+  } else if (days <= 7) {
+    amountOfData = Math.floor((days * 16) / 6);
+    timeOffset = (i) => d3.timeHour.offset(today, -i * 6);
+  } else if (days <= 14) {
+    amountOfData = Math.floor((days * 26) / 8);
+    timeOffset = (i) => d3.timeHour.offset(today, -i * 8);
+  } else {
+    amountOfData = days;
+    timeOffset = (i) => d3.timeDay.offset(today, -i);
+  }
+
+  for (let i = 0; i < amountOfData; i++) {
+    const date = timeOffset(i);
 
     names.forEach((name) => {
       data.push({
@@ -174,27 +218,6 @@ const HeatMap = () => {
   // DaysSelect dropdown selector - displays data from today - dataKeys
   const [dataDays, setDataDays] = useState(90);
 
-  /** Important note for future updates
-   * In theory, the only thing that you need to update is Data.
-   * Currently, stale data is created using generateHeatmapData.
-   * Only requirement for data is to have the following format:
-   * {
-    "coin": "someCoin", 
-    "date": "2026-01-21T10:54:53.426Z", 
-    "value": 449 
-    }
-   * This is easy to confingure in code as well. 
-   * If date is in format Unix Timestamp: "timestamp": 1739777800000", simply update
-   * uniqueDates to handle them with a new Date() format. 
-   * There might be minor adjustments needed, but most visualisation should be dynamic. This includes:
-   * Colors, 
-   * x-axis,
-   * y-axis,
-   * tooltip
-   * slider
-   * drop-down menu: DaysSelect
-   */
-
   // current placeholder-data
   const data = useMemo(
     () => generateHeatmapData(placeholderN, dataDays),
@@ -207,7 +230,7 @@ const HeatMap = () => {
   );
 
   const height = 500;
-  const width = 1200;
+  const width = 1000;
   const innerWidth = width - margins.left - margins.right;
   const innerHeight = height - margins.top - margins.bottom;
 
@@ -254,13 +277,15 @@ const HeatMap = () => {
 
     const cellWidth = innerWidth / uniqueDates.length;
 
+    console.log(cellWidth, innerWidth, uniqueDates.length);
+
     const x = d3
       .scaleTime()
       .domain([
         uniqueDates[0],
-        d3.timeDay.offset(uniqueDates[uniqueDates.length - 1], 1),
+        d3.timeSecond.offset(uniqueDates[uniqueDates.length - 1], 1),
       ])
-      .range([0, innerWidth]);
+      .range([0, innerWidth - cellWidth]);
 
     const y = d3
       .scaleBand()
@@ -275,7 +300,7 @@ const HeatMap = () => {
       .attr("class", "cell")
       .attr("x", (d) => x(d.date)!)
       .attr("y", (d) => y(d.coin)!)
-      .attr("width", cellWidth)
+      .attr("width", cellWidth + 0.5)
       .attr("height", y.bandwidth())
       .attr("data-value", (d) => d.value)
       .attr("fill", (d) => colorScale(d.value));
@@ -290,48 +315,30 @@ const HeatMap = () => {
       .select(".domain")
       .remove();
 
-    /** Change amount of cells & time-labels depending on data-days
-     * 1 day: {
-     * times: 11, 13, 15, 17, 21, 23, 01, 03, 05, 07, 09
-     * format: DD, tt:tt
-     * cells: 24
-     * },
-     * 1 week: {
-     * times: 18, 10, 02, 18, 10, 02, 18, 10, 02, 18, 10
-     * format: DD, tt:tt
-     * cells: 21
-     * },
-     * 2 week:
-     * 30 day:
-     * 3 month:
-     * 6 month:
-     * 1 year:
-     */
-
     let interval;
     let tickFormat;
 
     if (dataDays <= 1) {
-      interval = d3.timeHour.every(4);
+      interval = d3.timeHour.every(2);
       tickFormat = (d) => d3.timeFormat("%H:%M")(d);
     } else if (dataDays <= 7) {
-      interval = d3.timeHour.every(30);
+      interval = d3.timeHour.every(8);
       tickFormat = (d) => {
         const date = d as Date;
 
-        return d3.timeFormat("%d %b %H:%M")(date);
+        return d3.timeFormat("%d, %H:%M")(date);
       };
     } else if (dataDays <= 14) {
-      interval = d3.timeDay.every(1);
+      interval = d3.timeHour.every(30);
       tickFormat = (d) => d3.timeFormat("%d %b")(d);
     } else if (dataDays <= 30) {
       interval = d3.timeDay.every(2);
       tickFormat = (d) => d3.timeFormat("%d %b")(d);
     } else if (dataDays <= 90) {
-      interval = d3.timeDay.every(10);
+      interval = d3.timeWeek.every(1);
       tickFormat = (d) => d3.timeFormat("%d %b")(d);
     } else if (dataDays <= 182) {
-      interval = d3.timeDay.every(18);
+      interval = d3.timeWeek.every(2);
       tickFormat = (d) => d3.timeFormat("%d %b")(d);
     } else {
       interval = d3.timeMonth.every(1);
@@ -340,7 +347,7 @@ const HeatMap = () => {
 
     const filteredTicks = interval.range(
       uniqueDates[0],
-      d3.timeDay.offset(uniqueDates[uniqueDates.length - 1]),
+      d3.timeSecond.offset(uniqueDates[uniqueDates.length - 1], 1),
     );
 
     chart
