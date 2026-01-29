@@ -169,60 +169,22 @@ const generateHeatmapData = (names: string[], days = 90) => {
   return data;
 };
 
-const HeatMap = () => {
-  const svgRef = useRef<SVGSVGElement | null>(null);
+const HeatMap = ({
+  data,
+  placeholderN,
+  dataDays,
+  svgRef,
+  maxValue,
+  colorSliderValue,
+}) => {
+  const prevCoinAtMouse = useRef<string | null>(null);
+  const prevDateAtMouse = useRef<Date | null>(null);
   const cellsRef = useRef<d3.Selection<
     SVGRectElement,
     SVGSVGElement,
     SVGSVGElement,
     SVGSVGElement
   > | null>(null);
-
-  // placeholder names
-  const placeholderN = useMemo(
-    () => [
-      "BTC",
-      "ETH",
-      "USDT",
-      "BNB",
-      "SOL",
-      "XRP",
-      "USDC",
-      "ADA",
-      "STETH",
-      "AVAX",
-      "DOGE",
-      "DOT",
-      "TRX",
-      "LINK",
-      "WBTC",
-      "MATIC",
-      "SHIB",
-      "TON",
-      "DAI",
-      "LTC",
-      "BCH",
-      "UNI",
-      "LEO",
-      "NEAR",
-      "OP",
-      "APT",
-      "ARB",
-      "XLM",
-      "OKB",
-      "LDO",
-    ],
-    [],
-  );
-
-  // DaysSelect dropdown selector - displays data from today - dataKeys
-  const [dataDays, setDataDays] = useState(90);
-
-  // current placeholder-data
-  const data = useMemo(
-    () => generateHeatmapData(placeholderN, dataDays),
-    [dataDays, placeholderN],
-  );
 
   const margins = useMemo(
     () => ({ top: 50, bottom: 50, left: 50, right: 50 }),
@@ -233,13 +195,6 @@ const HeatMap = () => {
   const width = 1000;
   const innerWidth = width - margins.left - margins.right;
   const innerHeight = height - margins.top - margins.bottom;
-
-  // Find the max value for the domain
-  const maxValue = d3.max(data, (d) => d.value) || 1000;
-
-  const defaultSliderValue = maxValue * 0.4;
-  const [colorSliderValue, setColorSliderValue] =
-    useState<number>(defaultSliderValue);
 
   const colorSchemeValues = useMemo(
     () => ({
@@ -258,8 +213,20 @@ const HeatMap = () => {
     [colorSchemeValues, maxValue],
   );
 
+  const valueLookup = useMemo(() => {
+    const map = new Map();
+    data.forEach((d) => {
+      map.set(`${d.date.getTime()}-${d.coin}`, d.value);
+    });
+    return map;
+  }, [data]);
+
   useEffect(() => {
     if (!data || !svgRef.current) return;
+
+    const mouseTooltip = d3.select("#mouse-tooltip");
+    const coinTooltip = d3.select("#coin-tooltip");
+    const dateTooltip = d3.select("#date-tooltip");
 
     const dateFormatter = d3.timeFormat("%d %b %Y, %H:%M");
 
@@ -273,17 +240,21 @@ const HeatMap = () => {
       .append("g")
       .attr("transform", `translate(${margins.left}, ${margins.top})`);
 
-    const uniqueDates = Array.from(new Set(data.map((d) => d.date.getTime())))
-      .map((time) => new Date(time))
-      .sort((a, b) => a.getTime() - b.getTime());
+    const dataByDate = d3.group(data, (d) => d.date.getTime());
+    const uniqueDates = Array.from(dataByDate.keys())
+      .sort((a, b) => a - b)
+      .map((time) => ({
+        date: new Date(time),
+        records: dataByDate.get(time),
+      }));
 
     const cellWidth = innerWidth / uniqueDates.length;
 
     const x = d3
       .scaleTime()
       .domain([
-        uniqueDates[0],
-        d3.timeSecond.offset(uniqueDates[uniqueDates.length - 1], 1),
+        uniqueDates[0].date,
+        d3.timeSecond.offset(uniqueDates[uniqueDates.length - 1].date, 1),
       ])
       .range([0, innerWidth - cellWidth]);
 
@@ -346,8 +317,8 @@ const HeatMap = () => {
     }
 
     const filteredTicks = interval.range(
-      uniqueDates[0],
-      d3.timeSecond.offset(uniqueDates[uniqueDates.length - 1], 1),
+      uniqueDates[0].date,
+      d3.timeSecond.offset(uniqueDates[uniqueDates.length - 1].date, 1),
     );
 
     chart
@@ -414,28 +385,15 @@ const HeatMap = () => {
       .style("opacity", 0)
       .style("display", "none");
 
-    const tooltip = d3
-      .select("body")
-      .append("div")
-      .attr("class", classes.tooltip)
-      .style("width", "40px")
-      .style("text-align", "right");
-
-    const tooltipRawDate = d3
-      .select("body")
-      .append("div")
-      .attr("class", classes.tooltip)
-      .style("text-align", "center");
-
     listeningRect.on("mousemove", (event) => {
       const [mouseX, mouseY] = d3.pointer(event);
 
       const dateAtMouse = x.invert(mouseX);
 
-      const bisect = d3.bisector((d: Date) => d).left;
+      const bisect = d3.bisector((d) => d.date).left;
       const index = bisect(uniqueDates, dateAtMouse);
 
-      const snappedDate = uniqueDates[Math.max(0, index - 1)];
+      const snappedDate = uniqueDates[Math.max(0, index - 1)].date;
       if (!snappedDate) return;
 
       const snappedX = x(snappedDate);
@@ -444,72 +402,98 @@ const HeatMap = () => {
         mouseY / (innerHeight / placeholderN.length),
       );
       const coinAtMouse = placeholderN[coinIndex];
+
       if (!coinAtMouse) return;
       const snappedY = y(coinAtMouse)! + y.bandwidth() / 2;
 
       const centerX = snappedX + cellWidth / 2;
 
-      crosshairX
-        .interrupt()
-        .attr("x1", centerX)
-        .attr("x2", centerX)
-        .attr("y1", 0)
-        .attr("y2", innerHeight)
-        .style("display", "block")
-        .style("opacity", 1);
+      const key = `${snappedDate.getTime()}-${coinAtMouse}`;
+      const valAtMouse = valueLookup.get(key) || 0;
 
-      highlightX
-        .interrupt()
-        .style("opacity", 0.4)
-        .style("display", "block")
+      if (prevDateAtMouse.current?.getTime() !== snappedDate.getTime()) {
+        crosshairX
+          .interrupt()
+          .attr("x1", centerX)
+          .attr("x2", centerX)
+          .attr("y1", 0)
+          .attr("y2", innerHeight)
+          .style("display", "block")
+          .style("opacity", 1);
 
-        .transition()
-        .duration(100)
-        .ease(d3.easeCubicOut)
-        .attr("x1", centerX)
-        .attr("x2", centerX)
-        .attr("y1", 0)
-        .attr("y2", innerWidth);
+        highlightX
+          .interrupt()
+          .style("opacity", 0.4)
+          .style("display", "block")
+          .transition()
+          .duration(130)
+          .ease(d3.easeCubicOut)
+          .attr("x1", centerX)
+          .attr("x2", centerX)
+          .attr("y1", 0)
+          .attr("y2", innerWidth);
 
-      crosshairY
-        .interrupt()
-        .attr("y1", snappedY)
-        .attr("y2", snappedY)
-        .attr("x1", 0)
-        .attr("x2", innerWidth)
-        .style("display", "block")
-        .style("opacity", 1);
+        prevDateAtMouse.current = snappedDate;
+      }
 
-      highlightY
-        .interrupt()
-        .style("opacity", 0.4)
-        .style("display", "block")
+      if (prevCoinAtMouse.current !== coinAtMouse) {
+        crosshairY
+          .interrupt()
+          .attr("y1", snappedY)
+          .attr("y2", snappedY)
+          .attr("x1", 0)
+          .attr("x2", innerWidth)
+          .style("display", "block")
+          .style("opacity", 1);
 
-        .transition()
-        .duration(100)
-        .ease(d3.easeCubicOut)
-        .attr("y1", snappedY)
-        .attr("y2", snappedY)
-        .attr("x1", 0)
-        .attr("x2", innerWidth);
+        highlightY
+          .interrupt()
+          .style("opacity", 0.4)
+          .style("display", "block")
+          .transition()
+          .duration(130)
+          .ease(d3.easeCubicOut)
+          .attr("y1", snappedY)
+          .attr("y2", snappedY)
+          .attr("x1", 0)
+          .attr("x2", innerWidth);
 
-      tooltip
+        prevCoinAtMouse.current = coinAtMouse;
+      }
+
+      coinTooltip
         .style("display", "block")
         .html(coinAtMouse)
         .transition()
-        .duration(500)
+        .duration(300)
         .ease(d3.easeCubicOut)
-        .style("top", `${snappedY + 111.5}px`)
-        .style("left", `${8}px`);
+        .style("transform-origin", "top")
+        .style("transform", `translate3d(-42.5px, ${snappedY + 110}px, 0)`);
 
-      tooltipRawDate
+      dateTooltip
         .style("display", "block")
-        .html(dateFormatter(dateAtMouse))
+        .html(dateFormatter(snappedDate))
         .transition()
-        .duration(500)
+        .duration(300)
         .ease(d3.easeCubicOut)
-        .style("left", `${snappedX}px`)
-        .style("top", `${height + 22.5}px`);
+        .style("transform-origin", "left")
+        .style(
+          "transform",
+          `translate3d(${snappedX - margins.left}px, ${height + 22.5}px, 0)`,
+        );
+
+      mouseTooltip
+        .style("display", "block")
+        .html(
+          `<strong>Liquidition traders</strong> <br /> ${coinAtMouse} - ${valAtMouse}`,
+        )
+        .transition()
+        .duration(300)
+        .ease(d3.easeCubicOut)
+        .style(
+          "transform",
+          `translate3d(${snappedX + 65}px, ${snappedY + 135}px, 0)`,
+        );
     });
 
     chart.on("mouseleave", () => {
@@ -517,12 +501,14 @@ const HeatMap = () => {
       crosshairX.interrupt().style("opacity", 0).style("display", "none");
       highlightY.interrupt().style("opacity", 0).style("display", "none");
       crosshairY.interrupt().style("opacity", 0).style("display", "none");
-
-      tooltip.style("display", "none");
-      tooltipRawDate.style("display", "none");
+      mouseTooltip.style("display", "none");
+      coinTooltip.style("display", "none");
+      dateTooltip.style("display", "none");
     });
 
-    return () => svgElement.selectAll("*").remove();
+    return () => {
+      svgElement.selectAll("*").remove();
+    };
   }, [
     data,
     innerHeight,
@@ -552,8 +538,107 @@ const HeatMap = () => {
   }, [colorScale]);
 
   return (
-    <div>
-      <div style={{ width: "200px", marginLeft: margins.left }}>
+    <>
+      <div
+        id="mouse-tooltip"
+        className={classes.mousetooltip}
+        style={{
+          display: "none",
+          pointerEvents: "none",
+          zIndex: 1001,
+        }}
+      />
+      <div
+        id="coin-tooltip"
+        className={classes.tooltip}
+        style={{
+          display: "none",
+          textAlign: "right",
+          pointerEvents: "none",
+          width: "40px",
+          zIndex: 1000,
+        }}
+      />
+      <div
+        id="date-tooltip"
+        className={classes.tooltip}
+        style={{
+          display: "none",
+          pointerEvents: "none",
+          zIndex: 1000,
+        }}
+      />
+    </>
+  );
+};
+
+const Container = () => {
+  const svgRef = useRef<SVGSVGElement | null>(null);
+
+  // placeholder names
+  const placeholderN = useMemo(
+    () => [
+      "BTC",
+      "ETH",
+      "USDT",
+      "BNB",
+      "SOL",
+      "XRP",
+      "USDC",
+      "ADA",
+      "STETH",
+      "AVAX",
+      "DOGE",
+      "DOT",
+      "TRX",
+      "LINK",
+      "WBTC",
+      "MATIC",
+      "SHIB",
+      "TON",
+      "DAI",
+      "LTC",
+      "BCH",
+      "UNI",
+      "LEO",
+      "NEAR",
+      "OP",
+      "APT",
+      "ARB",
+      "XLM",
+      "OKB",
+      "LDO",
+    ],
+    [],
+  );
+
+  // DaysSelect dropdown selector - displays data from today - dataKeys
+  const [dataDays, setDataDays] = useState(90);
+
+  // current placeholder-data
+  const data = useMemo(
+    () => generateHeatmapData(placeholderN, dataDays),
+    [dataDays, placeholderN],
+  );
+
+  // Find the max value for the domain
+  const maxValue = d3.max(data, (d) => d.value) || 1000;
+
+  const defaultSliderValue = maxValue * 0.4;
+  const [colorSliderValue, setColorSliderValue] =
+    useState<number>(defaultSliderValue);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={{ width: "200px", marginLeft: 50 }}>
+        <HeatMap
+          data={data}
+          placeholderN={placeholderN}
+          dataDays={dataDays}
+          svgRef={svgRef}
+          maxValue={maxValue}
+          colorSliderValue={colorSliderValue}
+        />
         <DaysSelect activeDay={dataDays} setActiveDay={setDataDays} />
         <ColorSlider
           value={colorSliderValue}
@@ -561,9 +646,9 @@ const HeatMap = () => {
           maxVal={maxValue}
         />
       </div>
-      <svg ref={svgRef} />;
+      <svg ref={svgRef} />
     </div>
   );
 };
 
-export default HeatMap;
+export default Container;
