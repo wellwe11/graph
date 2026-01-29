@@ -24,18 +24,23 @@
   z-index: 1;
 
   width: 100%;
+  position: relative;
+  cursor: pointer;
 }
 
-.toolTip {
+.tooltip {
   position: absolute;
-  padding: 5px;
-  background-color: rgb(11, 40, 65);
-  color: white;
+
+  color: black;
+
   border: 0px solid white;
   border-radius: 0px;
   display: none;
-  opacity: 0.75;
-  font-size: 14px;
+  font-size: 12px;
+
+  background-color: white;
+
+  padding: 1px;
 }
 
 .highlightLine {

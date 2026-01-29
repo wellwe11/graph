@@ -261,6 +261,8 @@ const HeatMap = () => {
   useEffect(() => {
     if (!data || !svgRef.current) return;
 
+    const dateFormatter = d3.timeFormat("%d %b %Y, %H:%M");
+
     const svgElement = d3
       .select(svgRef.current)
       .attr("width", width)
@@ -276,8 +278,6 @@ const HeatMap = () => {
       .sort((a, b) => a.getTime() - b.getTime());
 
     const cellWidth = innerWidth / uniqueDates.length;
-
-    console.log(cellWidth, innerWidth, uniqueDates.length);
 
     const x = d3
       .scaleTime()
@@ -370,9 +370,7 @@ const HeatMap = () => {
       .append("rect")
       .attr("class", classes.rect)
       .attr("width", innerWidth)
-      .attr("height", innerHeight)
-      .attr("x", 0)
-      .attr("y", 0);
+      .attr("height", innerHeight);
 
     const highlightX = chart
       .append("line")
@@ -381,7 +379,8 @@ const HeatMap = () => {
       .attr("stroke", "white")
       .attr("stroke-width", cellWidth)
       .style("pointer-events", "none")
-      .style("opacity", 0);
+      .style("opacity", 0)
+      .style("display", "none");
 
     const crosshairX = chart
       .append("line")
@@ -391,7 +390,8 @@ const HeatMap = () => {
       .attr("strok-width", 1.1)
       .attr("stroke-dasharray", "5")
       .style("pointer-events", "none")
-      .style("opacity", 0);
+      .style("opacity", 0)
+      .style("display", "none");
 
     const highlightY = chart
       .append("line")
@@ -400,7 +400,8 @@ const HeatMap = () => {
       .attr("stroke", "white")
       .attr("stroke-width", y.bandwidth())
       .style("pointer-events", "none")
-      .style("opacity", 0);
+      .style("opacity", 0)
+      .style("display", "none");
 
     const crosshairY = chart
       .append("line")
@@ -410,76 +411,118 @@ const HeatMap = () => {
       .attr("strok-width", 1.1)
       .attr("stroke-dasharray", "5")
       .style("pointer-events", "none")
-      .style("opacity", 0);
+      .style("opacity", 0)
+      .style("display", "none");
 
-    listeningRect
-      .on("mousemove", (event) => {
-        const [mouseX, mouseY] = d3.pointer(event);
+    const tooltip = d3
+      .select("body")
+      .append("div")
+      .attr("class", classes.tooltip)
+      .style("width", "40px")
+      .style("text-align", "right");
 
-        const dateAtMouse = x.invert(mouseX);
+    const tooltipRawDate = d3
+      .select("body")
+      .append("div")
+      .attr("class", classes.tooltip)
+      .style("text-align", "center");
 
-        const bisect = d3.bisector((d: Date) => d).left;
-        const index = bisect(uniqueDates, dateAtMouse);
+    listeningRect.on("mousemove", (event) => {
+      const [mouseX, mouseY] = d3.pointer(event);
 
-        const snappedDate = uniqueDates[Math.max(0, index - 1)];
-        if (!snappedDate) return;
+      const dateAtMouse = x.invert(mouseX);
 
-        const snappedX = x(snappedDate);
+      const bisect = d3.bisector((d: Date) => d).left;
+      const index = bisect(uniqueDates, dateAtMouse);
 
-        const coinIndex = Math.floor(
-          mouseY / (innerHeight / placeholderN.length),
-        );
-        const coinAtMouse = placeholderN[coinIndex];
-        if (!coinAtMouse) return;
-        const snappedY = y(coinAtMouse)! + y.bandwidth() / 2;
+      const snappedDate = uniqueDates[Math.max(0, index - 1)];
+      if (!snappedDate) return;
 
-        const centerX = snappedX + cellWidth / 2;
+      const snappedX = x(snappedDate);
 
-        crosshairX
-          .transition()
-          .duration(75)
-          .ease(d3.easeLinear)
-          .style("opacity", 1)
-          .attr("x1", centerX)
-          .attr("x2", centerX)
-          .attr("y1", 0)
-          .attr("y2", innerHeight);
+      const coinIndex = Math.floor(
+        mouseY / (innerHeight / placeholderN.length),
+      );
+      const coinAtMouse = placeholderN[coinIndex];
+      if (!coinAtMouse) return;
+      const snappedY = y(coinAtMouse)! + y.bandwidth() / 2;
 
-        highlightX
-          .transition()
-          .duration(30)
-          .style("opacity", 0.4)
-          .attr("x1", centerX)
-          .attr("x2", centerX)
-          .attr("y1", 0)
-          .attr("y2", innerWidth);
+      const centerX = snappedX + cellWidth / 2;
 
-        crosshairY
-          .transition()
-          .duration(75)
-          .ease(d3.easeLinear)
-          .style("opacity", 1)
-          .attr("y1", snappedY)
-          .attr("y2", snappedY)
-          .attr("x1", 0)
-          .attr("x2", innerWidth);
+      crosshairX
+        .interrupt()
+        .attr("x1", centerX)
+        .attr("x2", centerX)
+        .attr("y1", 0)
+        .attr("y2", innerHeight)
+        .style("display", "block")
+        .style("opacity", 1);
 
-        highlightY
-          .transition()
-          .duration(30)
-          .style("opacity", 0.4)
-          .attr("y1", snappedY)
-          .attr("y2", snappedY)
-          .attr("x1", 0)
-          .attr("x2", innerWidth);
-      })
-      .on("mouseleave", () => {
-        highlightX.style("opacity", 0);
-        crosshairX.style("opacity", 0);
+      highlightX
+        .interrupt()
+        .style("opacity", 0.4)
+        .style("display", "block")
 
-        highlightY.style("opacity", 0);
-        crosshairY.style("opacity", 0);
-      });
+        .transition()
+        .duration(100)
+        .ease(d3.easeCubicOut)
+        .attr("x1", centerX)
+        .attr("x2", centerX)
+        .attr("y1", 0)
+        .attr("y2", innerWidth);
+
+      crosshairY
+        .interrupt()
+        .attr("y1", snappedY)
+        .attr("y2", snappedY)
+        .attr("x1", 0)
+        .attr("x2", innerWidth)
+        .style("display", "block")
+        .style("opacity", 1);
+
+      highlightY
+        .interrupt()
+        .style("opacity", 0.4)
+        .style("display", "block")
+
+        .transition()
+        .duration(100)
+        .ease(d3.easeCubicOut)
+        .attr("y1", snappedY)
+        .attr("y2", snappedY)
+        .attr("x1", 0)
+        .attr("x2", innerWidth);
+
+      tooltip
+        .style("display", "block")
+        .html(coinAtMouse)
+        .transition()
+        .duration(500)
+        .ease(d3.easeCubicOut)
+        .style("top", `${snappedY + 111.5}px`)
+        .style("left", `${8}px`);
+
+      tooltipRawDate
+        .style("display", "block")
+        .html(dateFormatter(dateAtMouse))
+        .transition()
+        .duration(500)
+        .ease(d3.easeCubicOut)
+        .style("left", `${snappedX}px`)
+        .style("top", `${height + 22.5}px`);
+    });
+
+    chart.on("mouseleave", () => {
+      highlightX.interrupt().style("opacity", 0).style("display", "none");
+      crosshairX.interrupt().style("opacity", 0).style("display", "none");
+      highlightY.interrupt().style("opacity", 0).style("display", "none");
+      crosshairY.interrupt().style("opacity", 0).style("display", "none");
+
+      tooltip.style("display", "none");
+      tooltipRawDate.style("display", "none");
+    });
+
+    return () => svgElement.selectAll("*").remove();
   }, [
     data,
     innerHeight,
