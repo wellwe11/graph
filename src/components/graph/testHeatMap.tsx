@@ -128,22 +128,27 @@ const DaysSelect = ({
   return (
     <div
       onMouseLeave={() => setDisplayDays(false)}
-      className="relative z-10 w-fit"
+      className="relative z-10 w-37 text-white flex justify-center bg-[#151b2b] p-2 rounded-sm"
+      style={{ border: "1px solid gray" }}
     >
-      <button className="cursor-pointer" onClick={() => setDisplayDays(true)}>
+      <button
+        className="cursor-pointer"
+        onClick={() => setDisplayDays(!displayDays)}
+      >
         {label}
       </button>
       <div
-        className="absolute bg-white flex flex-col items-left w-20"
+        className="absolute flex flex-col items-left w-25 top-10 bg-[#151b2b] rounded-sm"
         style={{
           opacity: `${displayDays ? "1" : "0"}`,
           visibility: `${displayDays ? "visible" : "hidden"}`,
+          border: "1px solid gray",
         }}
       >
         {days.map(({ label, value }) => (
           <button
             key={value}
-            className="cursor-pointer text-left"
+            className="cursor-pointer text-left p-2 hover:bg-[rgba(123,133,160,0.597)]"
             onClick={() => {
               setActiveDay(value);
               setDisplayDays(false);
@@ -299,10 +304,11 @@ const HeatMap = ({
       .attr("class", "cell")
       .attr("x", (d) => x(d.date)!)
       .attr("y", (d) => y(d.coin)!)
-      .attr("width", cellWidth)
+      .attr("width", cellWidth + 0.5)
       .attr("height", y.bandwidth())
       .attr("data-value", (d) => d.value)
-      .attr("fill", (d) => colorScale(d.value));
+      .attr("fill", (d) => colorScale(d.value))
+      .style("shape-rendering", "crispEdges");
 
     chart
       .append("g")
@@ -467,6 +473,7 @@ const HeatMap = ({
             .attr("y2", innerHeight);
           prevDateAtMouse.current = snappedDate;
         }
+
         if (prevCoinAtMouse.current !== coinAtMouse) {
           crosshairY
             .interrupt()
@@ -510,7 +517,7 @@ const HeatMap = ({
         .duration(300)
         .ease(d3.easeCubicOut)
         .style("transform-origin", "left")
-        .style("transform", `translate3d(${snappedX + 12.5}px, ${-50}px, 0)`);
+        .style("transform", `translate3d(${snappedX + 5}px, ${-50}px, 0)`);
 
       mouseTooltip
         .style("display", "block")
@@ -522,7 +529,7 @@ const HeatMap = ({
         .ease(d3.easeCubicOut)
         .style(
           "transform",
-          `translate3d(${snappedX + 120}px, ${snappedY + 70}px, 0)`,
+          `translate3d(${snappedX + 90}px, ${snappedY + 75}px, 0)`,
         );
     });
 
@@ -535,8 +542,6 @@ const HeatMap = ({
       coinTooltip.style("display", "none");
       dateTooltip.style("display", "none");
     });
-
-    console.log("asd");
 
     return () => {
       svgElement.selectAll("*").remove();
@@ -653,32 +658,31 @@ const Container = () => {
   }, [maxValue]);
 
   const height = 600;
-  const width = 300;
+  const width = 800;
 
   return (
-    <div
-      className="w-50 ml-12.5 bg-[#151b2b] shadow-[0_2px_20px_0_rgba(0,0,0,0.8)] flex 
-      items-start"
-      style={{
-        width: `${width + 160}px`,
-        height: `${height}px`,
-      }}
-    >
-      <HeatMap
-        data={data}
-        placeholderN={placeholderN}
-        dataDays={dataDays}
-        maxValue={maxValue}
-        colorSliderValue={colorSliderValue}
-        height={height}
-        width={width}
-      />
-      <DaysSelect setActiveDay={setDataDays} />
-      <ColorSlider
-        value={colorSliderValue}
-        setValue={setColorSliderValue}
-        maxVal={maxValue}
-      />
+    <div style={{ width: width }} className="flex flex-col bg-[#151b2b]">
+      <div className="flex justify-between w-50 h-10">
+        <div className="w-40">
+          <ColorSlider
+            value={colorSliderValue}
+            setValue={setColorSliderValue}
+            maxVal={maxValue}
+          />
+        </div>
+        <DaysSelect setActiveDay={setDataDays} />
+      </div>
+      <div className="relative" style={{ height: height }}>
+        <HeatMap
+          data={data}
+          placeholderN={placeholderN}
+          dataDays={dataDays}
+          maxValue={maxValue}
+          colorSliderValue={colorSliderValue}
+          height={height}
+          width={width}
+        />
+      </div>
     </div>
   );
 };
