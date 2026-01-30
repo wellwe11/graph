@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import classes from "./graph.module.scss";
 
 // Divide code into smaller chunks
-// fix all types
 // Isolate logic
 // Create final graph-item (which is placed below graph)
 
@@ -98,15 +97,11 @@ const ColorSlider = ({
 };
 
 const DaysSelect = ({
-  activeDay,
   setActiveDay,
 }: {
-  activeDay: number;
   setActiveDay: React.Dispatch<React.SetStateAction<number>>;
 }) => {
   const [displayDays, setDisplayDays] = useState(false);
-  const [label, setLabel] = useState(() => activeDay);
-
   const days = [
     { label: "1 day", value: 1 },
     { label: "1 week", value: 7 },
@@ -116,6 +111,8 @@ const DaysSelect = ({
     { label: "6 month", value: 182 },
     { label: "1 year", value: 365 },
   ];
+
+  const [label, setLabel] = useState("3 month");
 
   return (
     <div
@@ -665,7 +662,7 @@ const Container = () => {
           maxValue={maxValue}
           colorSliderValue={colorSliderValue}
         />
-        <DaysSelect activeDay={dataDays} setActiveDay={setDataDays} />
+        <DaysSelect setActiveDay={setDataDays} />
         <ColorSlider
           value={colorSliderValue}
           setValue={setColorSliderValue}
