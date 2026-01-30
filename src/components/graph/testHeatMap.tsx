@@ -5,6 +5,9 @@ import classes from "./graph.module.scss";
 // Divide code into smaller chunks
 // Isolate logic
 // Create final graph-item (which is placed below graph)
+// remove highlights etc when more than 6 months
+// make it a bit scaleable and style it
+// tome-toolbar is not center
 
 /**
  * 
@@ -67,7 +70,9 @@ const ColorSlider = ({
       onMouseEnter={() => setViewVal(true)}
       onMouseLeave={() => setViewVal(false)}
     >
-      <label htmlFor="slider">Color slider</label>
+      <label htmlFor="slider" className="text-white">
+        Color slider
+      </label>
       <div style={{ position: "relative" }}>
         <div
           className="absolute -bottom-8.5 px-2 py-1 mb-2 text-xs font-bold text-white transition-opacity bg-gray-500 rounded -translate-x-1/2 pointer-events-none"
@@ -94,6 +99,7 @@ const ColorSlider = ({
           [&::-webkit-slider-thumb]:bg-gray-600 
           [&::-webkit-slider-thumb]:border-2 
           [&::-webkit-slider-thumb]:border-white 
+          
           "
         />
       </div>
@@ -192,21 +198,23 @@ const HeatMap = ({
   data,
   placeholderN,
   dataDays,
-  svgRef,
   maxValue,
   colorSliderValue,
+  width,
+  height,
 }: {
   data: DataObj[];
   placeholderN: string[];
   dataDays: number;
-  svgRef: React.RefObject<SVGSVGElement | null>;
   maxValue: number;
   colorSliderValue: number;
+  width: number;
+  height: number;
 }) => {
   const prevCoinAtMouse = useRef<string | null>(null);
   const prevDateAtMouse = useRef<Date | null>(null);
   const cellsRef = useRef<d3.Selection<
-    SVGRectElement | d3.BaseType,
+    d3.BaseType,
     DataObj,
     SVGGElement,
     unknown
@@ -217,8 +225,6 @@ const HeatMap = ({
     [],
   );
 
-  const height = 500;
-  const width = 1000;
   const innerWidth = width - margins.left - margins.right;
   const innerHeight = height - margins.top - margins.bottom;
 
@@ -249,18 +255,13 @@ const HeatMap = ({
   }, [data]);
 
   useEffect(() => {
-    if (!data || !svgRef.current) return;
+    if (!data) return;
 
+    const svgElement = d3.select("#svgRef");
     const mouseTooltip = d3.select("#mouse-tooltip");
     const coinTooltip = d3.select("#coin-tooltip");
     const dateTooltip = d3.select("#date-tooltip");
 
-    const dateFormatter = d3.timeFormat("%d %b %Y, %H:%M");
-
-    const svgElement = d3
-      .select(svgRef.current)
-      .attr("width", width)
-      .attr("height", height);
     svgElement.selectAll("*").remove();
 
     const chart = svgElement
@@ -298,9 +299,10 @@ const HeatMap = ({
       .attr("class", "cell")
       .attr("x", (d) => x(d.date)!)
       .attr("y", (d) => y(d.coin)!)
-      .attr("width", cellWidth + 0.5)
+      .attr("width", cellWidth)
       .attr("height", y.bandwidth())
-      .attr("data-value", (d) => d.value);
+      .attr("data-value", (d) => d.value)
+      .attr("fill", (d) => colorScale(d.value));
 
     chart
       .append("g")
@@ -437,55 +439,60 @@ const HeatMap = ({
       const key = `${snappedDate.getTime()}-${coinAtMouse}`;
       const valAtMouse = valueLookup.get(key) || 0;
 
-      if (prevDateAtMouse.current?.getTime() !== snappedDate.getTime()) {
-        crosshairX
-          .interrupt()
-          .attr("x1", centerX)
-          .attr("x2", centerX)
-          .attr("y1", 0)
-          .attr("y2", innerHeight)
-          .style("display", "block")
-          .style("opacity", 1);
+      // Remove strokes if too many columns - save on performance
+      if (dataDays <= 180) {
+        if (
+          prevDateAtMouse.current?.getTime() !== snappedDate.getTime() ||
+          prevCoinAtMouse.current !== coinAtMouse
+        ) {
+          crosshairX
+            .interrupt()
+            .attr("x1", centerX)
+            .attr("x2", centerX)
+            .attr("y1", 0)
+            .attr("y2", innerHeight)
+            .style("display", "block")
+            .style("opacity", 1);
 
-        highlightX
-          .interrupt()
-          .style("opacity", 0.4)
-          .style("display", "block")
-          .transition()
-          .duration(50)
-          .ease(d3.easeCubicOut)
-          .attr("x1", centerX)
-          .attr("x2", centerX)
-          .attr("y1", 0)
-          .attr("y2", innerWidth);
+          highlightX
+            .interrupt()
+            .style("opacity", 0.4)
+            .style("display", "block")
+            .transition()
+            .duration(50)
+            .ease(d3.easeCubicOut)
+            .attr("x1", centerX)
+            .attr("x2", centerX)
+            .attr("y1", 0)
+            .attr("y2", innerHeight);
+          prevDateAtMouse.current = snappedDate;
+        }
+        if (prevCoinAtMouse.current !== coinAtMouse) {
+          crosshairY
+            .interrupt()
+            .attr("y1", snappedY)
+            .attr("y2", snappedY)
+            .attr("x1", 0)
+            .attr("x2", innerWidth)
+            .style("display", "block")
+            .style("opacity", 1);
 
-        prevDateAtMouse.current = snappedDate;
+          highlightY
+            .interrupt()
+            .style("opacity", 0.4)
+            .style("display", "block")
+            .transition()
+            .duration(50)
+            .ease(d3.easeCubicOut)
+            .attr("y1", snappedY)
+            .attr("y2", snappedY)
+            .attr("x1", 0)
+            .attr("x2", innerWidth);
+
+          prevCoinAtMouse.current = coinAtMouse;
+        }
       }
-
-      if (prevCoinAtMouse.current !== coinAtMouse) {
-        crosshairY
-          .interrupt()
-          .attr("y1", snappedY)
-          .attr("y2", snappedY)
-          .attr("x1", 0)
-          .attr("x2", innerWidth)
-          .style("display", "block")
-          .style("opacity", 1);
-
-        highlightY
-          .interrupt()
-          .style("opacity", 0.4)
-          .style("display", "block")
-          .transition()
-          .duration(50)
-          .ease(d3.easeCubicOut)
-          .attr("y1", snappedY)
-          .attr("y2", snappedY)
-          .attr("x1", 0)
-          .attr("x2", innerWidth);
-
-        prevCoinAtMouse.current = coinAtMouse;
-      }
+      const dateFormatter = d3.timeFormat("%d %b %Y, %H:%M");
 
       coinTooltip
         .style("display", "block")
@@ -494,7 +501,7 @@ const HeatMap = ({
         .duration(300)
         .ease(d3.easeCubicOut)
         .style("transform-origin", "top")
-        .style("transform", `translate3d(-42.5px, ${snappedY + 110}px, 0)`);
+        .style("transform", `translate3d(10px, ${snappedY + 40}px, 0)`);
 
       dateTooltip
         .style("display", "block")
@@ -503,10 +510,7 @@ const HeatMap = ({
         .duration(300)
         .ease(d3.easeCubicOut)
         .style("transform-origin", "left")
-        .style(
-          "transform",
-          `translate3d(${snappedX - margins.left}px, ${height + 22.5}px, 0)`,
-        );
+        .style("transform", `translate3d(${snappedX + 12.5}px, ${-50}px, 0)`);
 
       mouseTooltip
         .style("display", "block")
@@ -518,7 +522,7 @@ const HeatMap = ({
         .ease(d3.easeCubicOut)
         .style(
           "transform",
-          `translate3d(${snappedX + 65}px, ${snappedY + 135}px, 0)`,
+          `translate3d(${snappedX + 120}px, ${snappedY + 70}px, 0)`,
         );
     });
 
@@ -532,26 +536,27 @@ const HeatMap = ({
       dateTooltip.style("display", "none");
     });
 
+    console.log("asd");
+
     return () => {
       svgElement.selectAll("*").remove();
     };
   }, [
     data,
+    placeholderN,
+    dataDays,
+    valueLookup,
+
     innerHeight,
     innerWidth,
     margins.top,
     margins.bottom,
     margins.left,
     margins.right,
-    placeholderN,
-    dataDays,
-    svgRef,
-    valueLookup,
   ]);
 
   useEffect(() => {
     if (!cellsRef.current) return;
-
     const timer = setTimeout(() => {
       cellsRef
         .current!.interrupt()
@@ -563,46 +568,35 @@ const HeatMap = ({
     }, 25); // Adjust for quicker color-change-update. Currently 25 to avoid unnecessary throttling
 
     return () => clearTimeout(timer);
-  }, [colorScale]);
+  }, [colorScale, cellsRef]);
 
   return (
     <>
+      <svg
+        id="svgRef"
+        style={{
+          width: width,
+          height: height,
+        }}
+      />
+
       <div
         id="mouse-tooltip"
-        className={classes.mousetooltip}
-        style={{
-          display: "none",
-          pointerEvents: "none",
-          zIndex: 1001,
-        }}
+        className={`hidden pointer-events-none z-1001 ${classes.mousetooltip}`}
       />
       <div
         id="coin-tooltip"
-        className={classes.tooltip}
-        style={{
-          display: "none",
-          textAlign: "right",
-          pointerEvents: "none",
-          width: "40px",
-          zIndex: 1000,
-        }}
+        className={`hidden text-right pointer-events-none w-10 z-1000 top-0 ${classes.tooltip}`}
       />
       <div
         id="date-tooltip"
-        className={classes.tooltip}
-        style={{
-          display: "none",
-          pointerEvents: "none",
-          zIndex: 1000,
-        }}
+        className={`hidden pointer-events-none z-1000 w-30 text-center ${classes.tooltip}`}
       />
     </>
   );
 };
 
 const Container = () => {
-  const svgRef = useRef<SVGSVGElement | null>(null);
-
   // placeholder names
   const placeholderN = useMemo(
     () => [
@@ -652,29 +646,39 @@ const Container = () => {
   // Find the max value for the domain
   const maxValue = d3.max(data, (d) => d.value) || 1000;
 
-  const defaultSliderValue = maxValue * 0.4;
-  const [colorSliderValue, setColorSliderValue] =
-    useState<number>(defaultSliderValue);
+  const [colorSliderValue, setColorSliderValue] = useState<number>(0);
+
+  useEffect(() => {
+    setColorSliderValue(maxValue * 0.4);
+  }, [maxValue]);
+
+  const height = 600;
+  const width = 300;
 
   return (
-    <div style={{ position: "relative" }}>
-      <div style={{ width: "200px", marginLeft: 50 }}>
-        <HeatMap
-          data={data}
-          placeholderN={placeholderN}
-          dataDays={dataDays}
-          svgRef={svgRef}
-          maxValue={maxValue}
-          colorSliderValue={colorSliderValue}
-        />
-        <DaysSelect setActiveDay={setDataDays} />
-        <ColorSlider
-          value={colorSliderValue}
-          setValue={setColorSliderValue}
-          maxVal={maxValue}
-        />
-      </div>
-      <svg ref={svgRef} />
+    <div
+      className="w-50 ml-12.5 bg-[#151b2b] shadow-[0_2px_20px_0_rgba(0,0,0,0.8)] flex 
+      items-start"
+      style={{
+        width: `${width + 160}px`,
+        height: `${height}px`,
+      }}
+    >
+      <HeatMap
+        data={data}
+        placeholderN={placeholderN}
+        dataDays={dataDays}
+        maxValue={maxValue}
+        colorSliderValue={colorSliderValue}
+        height={height}
+        width={width}
+      />
+      <DaysSelect setActiveDay={setDataDays} />
+      <ColorSlider
+        value={colorSliderValue}
+        setValue={setColorSliderValue}
+        maxVal={maxValue}
+      />
     </div>
   );
 };
