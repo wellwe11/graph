@@ -5,7 +5,6 @@ import "./index.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// initiate queryClient
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -18,11 +17,9 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Wrap components inside of client */}
       <div className={classes.app}>
         <Graph />
       </div>
-      {/* Enable devtools visulation of queries */}
       <ReactQueryDevtools initialIsOpen={false} />{" "}
     </QueryClientProvider>
   );
