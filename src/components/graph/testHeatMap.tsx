@@ -39,6 +39,11 @@ interface DataObj {
   value: number;
 }
 
+interface DateGroup {
+  date: Date;
+  records: DataObj[];
+}
+
 // Updates minvalue for what turns orange/red ('high' on heatmap)
 const ColorSlider = ({
   value,
@@ -148,7 +153,7 @@ const DaysSelect = ({
 };
 
 const generateHeatmapData = (names: string[], days = 90) => {
-  const data = [];
+  const data: DataObj[] = [];
   const today = new Date();
 
   let amountOfData;
@@ -156,16 +161,16 @@ const generateHeatmapData = (names: string[], days = 90) => {
 
   if (days <= 1) {
     amountOfData = 25;
-    timeOffset = (i) => d3.timeHour.offset(today, -i);
+    timeOffset = (i: number) => d3.timeHour.offset(today, -i);
   } else if (days <= 7) {
     amountOfData = Math.floor((days * 16) / 6);
-    timeOffset = (i) => d3.timeHour.offset(today, -i * 6);
+    timeOffset = (i: number) => d3.timeHour.offset(today, -i * 6);
   } else if (days <= 14) {
     amountOfData = Math.floor((days * 26) / 8);
-    timeOffset = (i) => d3.timeHour.offset(today, -i * 8);
+    timeOffset = (i: number) => d3.timeHour.offset(today, -i * 8);
   } else {
     amountOfData = days;
-    timeOffset = (i) => d3.timeDay.offset(today, -i);
+    timeOffset = (i: number) => d3.timeDay.offset(today, -i);
   }
 
   for (let i = 0; i < amountOfData; i++) {
@@ -268,7 +273,7 @@ const HeatMap = ({
       .map((time) => ({
         date: new Date(time),
         records: dataByDate.get(time),
-      }));
+      })) as DateGroup[];
 
     const cellWidth = innerWidth / uniqueDates.length;
 
@@ -411,8 +416,10 @@ const HeatMap = ({
 
       const dateAtMouse = x.invert(mouseX);
 
-      const bisect = d3.bisector((d) => d.date).left;
+      const bisect = d3.bisector((d: DateGroup) => d.date).left;
       const index = bisect(uniqueDates, dateAtMouse);
+
+      console.log(uniqueDates);
 
       const snappedDate = uniqueDates[Math.max(0, index - 1)].date;
       if (!snappedDate) return;
