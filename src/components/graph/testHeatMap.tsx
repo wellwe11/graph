@@ -419,8 +419,6 @@ const HeatMap = ({
       const bisect = d3.bisector((d: DateGroup) => d.date).left;
       const index = bisect(uniqueDates, dateAtMouse);
 
-      console.log(uniqueDates);
-
       const snappedDate = uniqueDates[Math.max(0, index - 1)].date;
       if (!snappedDate) return;
 
@@ -454,7 +452,7 @@ const HeatMap = ({
           .style("opacity", 0.4)
           .style("display", "block")
           .transition()
-          .duration(130)
+          .duration(50)
           .ease(d3.easeCubicOut)
           .attr("x1", centerX)
           .attr("x2", centerX)
@@ -479,7 +477,7 @@ const HeatMap = ({
           .style("opacity", 0.4)
           .style("display", "block")
           .transition()
-          .duration(130)
+          .duration(50)
           .ease(d3.easeCubicOut)
           .attr("y1", snappedY)
           .attr("y2", snappedY)
