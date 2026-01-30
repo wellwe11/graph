@@ -2,6 +2,11 @@ import * as d3 from "d3";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import classes from "./graph.module.scss";
 
+// Divide code into smaller chunks
+// fix all types
+// Isolate logic
+// Create final graph-item (which is placed below graph)
+
 /**
  * 
  * @param param0 
@@ -28,6 +33,12 @@ import classes from "./graph.module.scss";
    * drop-down menu: DaysSelect
    * 
  */
+
+interface DataObj {
+  coin: string;
+  date: Date;
+  value: number;
+}
 
 // Updates minvalue for what turns orange/red ('high' on heatmap)
 const ColorSlider = ({
@@ -86,7 +97,13 @@ const ColorSlider = ({
   );
 };
 
-const DaysSelect = ({ activeDay, setActiveDay }) => {
+const DaysSelect = ({
+  activeDay,
+  setActiveDay,
+}: {
+  activeDay: number;
+  setActiveDay: React.Dispatch<React.SetStateAction<number>>;
+}) => {
   const [displayDays, setDisplayDays] = useState(false);
   const [label, setLabel] = useState(() => activeDay);
 
@@ -176,14 +193,21 @@ const HeatMap = ({
   svgRef,
   maxValue,
   colorSliderValue,
+}: {
+  data: DataObj[];
+  placeholderN: string[];
+  dataDays: number;
+  svgRef: React.RefObject<SVGSVGElement | null>;
+  maxValue: number;
+  colorSliderValue: number;
 }) => {
   const prevCoinAtMouse = useRef<string | null>(null);
   const prevDateAtMouse = useRef<Date | null>(null);
   const cellsRef = useRef<d3.Selection<
-    SVGRectElement,
-    SVGSVGElement,
-    SVGSVGElement,
-    SVGSVGElement
+    SVGRectElement | d3.BaseType,
+    DataObj,
+    SVGGElement,
+    unknown
   > | null>(null);
 
   const margins = useMemo(
@@ -213,6 +237,7 @@ const HeatMap = ({
     [colorSchemeValues, maxValue],
   );
 
+  // map for finding coins quickly: O(1)
   const valueLookup = useMemo(() => {
     const map = new Map();
     data.forEach((d) => {
@@ -273,8 +298,7 @@ const HeatMap = ({
       .attr("y", (d) => y(d.coin)!)
       .attr("width", cellWidth + 0.5)
       .attr("height", y.bandwidth())
-      .attr("data-value", (d) => d.value)
-      .attr("fill", (d) => colorScale(d.value));
+      .attr("data-value", (d) => d.value);
 
     chart
       .append("g")
@@ -286,37 +310,37 @@ const HeatMap = ({
       .select(".domain")
       .remove();
 
-    let interval;
+    let interval: d3.TimeInterval | null;
     let tickFormat;
 
     if (dataDays <= 1) {
       interval = d3.timeHour.every(2);
-      tickFormat = (d) => d3.timeFormat("%H:%M")(d);
+      tickFormat = (d: d3.NumberValue) => d3.timeFormat("%H:%M")(d as Date);
     } else if (dataDays <= 7) {
       interval = d3.timeHour.every(8);
-      tickFormat = (d) => {
+      tickFormat = (d: d3.NumberValue) => {
         const date = d as Date;
 
         return d3.timeFormat("%d, %H:%M")(date);
       };
     } else if (dataDays <= 14) {
       interval = d3.timeHour.every(30);
-      tickFormat = (d) => d3.timeFormat("%d %b")(d);
+      tickFormat = (d: d3.NumberValue) => d3.timeFormat("%d %b")(d as Date);
     } else if (dataDays <= 30) {
       interval = d3.timeDay.every(2);
-      tickFormat = (d) => d3.timeFormat("%d %b")(d);
+      tickFormat = (d: d3.NumberValue) => d3.timeFormat("%d %b")(d as Date);
     } else if (dataDays <= 90) {
       interval = d3.timeWeek.every(1);
-      tickFormat = (d) => d3.timeFormat("%d %b")(d);
+      tickFormat = (d: d3.NumberValue) => d3.timeFormat("%d %b")(d as Date);
     } else if (dataDays <= 182) {
       interval = d3.timeWeek.every(2);
-      tickFormat = (d) => d3.timeFormat("%d %b")(d);
+      tickFormat = (d: d3.NumberValue) => d3.timeFormat("%d %b")(d as Date);
     } else {
       interval = d3.timeMonth.every(1);
-      tickFormat = (d) => d3.timeFormat("%b %Y")(d);
+      tickFormat = (d: d3.NumberValue) => d3.timeFormat("%b %Y")(d as Date);
     }
 
-    const filteredTicks = interval.range(
+    const filteredTicks = interval!.range(
       uniqueDates[0].date,
       d3.timeSecond.offset(uniqueDates[uniqueDates.length - 1].date, 1),
     );
@@ -518,15 +542,17 @@ const HeatMap = ({
     margins.left,
     margins.right,
     placeholderN,
-    // colorScale // Removed because it forces entire SVG to re-render. Will need to further seperate concerns in future
+    dataDays,
+    svgRef,
+    valueLookup,
   ]);
 
   useEffect(() => {
     if (!cellsRef.current) return;
 
     const timer = setTimeout(() => {
-      cellsRef.current
-        .interrupt()
+      cellsRef
+        .current!.interrupt()
         .transition()
         .attr("fill", function () {
           const value = parseFloat(d3.select(this).attr("data-value"));
