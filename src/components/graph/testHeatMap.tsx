@@ -127,13 +127,13 @@ const DaysSelect = ({
 
   return (
     <div
-      onMouseLeave={() => setDisplayDays(false)}
-      className="relative z-10 w-37 text-white flex justify-center bg-[#151b2b] p-2 rounded-sm"
-      style={{ border: "1px solid gray" }}
+      onClick={() => setDisplayDays(!displayDays)}
+      className="relative z-10 w-full text-white flex justify-center"
     >
       <button
-        className="cursor-pointer"
+        className="cursor-pointer w-full h-full bg-[#151b2b] p-2 rounded-sm"
         onClick={() => setDisplayDays(!displayDays)}
+        style={{ border: "1px solid gray" }}
       >
         {label}
       </button>
@@ -271,7 +271,9 @@ const HeatMap = ({
 
     const chart = svgElement
       .append("g")
-      .attr("transform", `translate(${margins.left}, ${margins.top})`);
+      .attr("transform", `translate(${margins.left}, ${0})`)
+      .style("width", innerWidth)
+      .style("height", innerHeight);
 
     const dataByDate = d3.group(data, (d) => d.date.getTime());
     const uniqueDates = Array.from(dataByDate.keys())
@@ -374,8 +376,8 @@ const HeatMap = ({
     const listeningRect = chart
       .append("rect")
       .attr("class", classes.rect)
-      .attr("width", innerWidth)
-      .attr("height", innerHeight);
+      .attr("width", "100%")
+      .attr("height", "100%");
 
     const highlightX = chart
       .append("line")
@@ -461,11 +463,11 @@ const HeatMap = ({
             .style("opacity", 1);
 
           highlightX
-            .interrupt()
+
             .style("opacity", 0.4)
             .style("display", "block")
             .transition()
-            .duration(50)
+            .duration(150)
             .ease(d3.easeCubicOut)
             .attr("x1", centerX)
             .attr("x2", centerX)
@@ -485,11 +487,10 @@ const HeatMap = ({
             .style("opacity", 1);
 
           highlightY
-            .interrupt()
             .style("opacity", 0.4)
             .style("display", "block")
             .transition()
-            .duration(50)
+            .duration(150)
             .ease(d3.easeCubicOut)
             .attr("y1", snappedY)
             .attr("y2", snappedY)
@@ -507,8 +508,7 @@ const HeatMap = ({
         .transition()
         .duration(300)
         .ease(d3.easeCubicOut)
-        .style("transform-origin", "top")
-        .style("transform", `translate3d(10px, ${snappedY + 40}px, 0)`);
+        .style("transform", `translate3d(10px, ${snappedY - 10}px, 0)`);
 
       dateTooltip
         .style("display", "block")
@@ -516,8 +516,7 @@ const HeatMap = ({
         .transition()
         .duration(300)
         .ease(d3.easeCubicOut)
-        .style("transform-origin", "left")
-        .style("transform", `translate3d(${snappedX + 5}px, ${-50}px, 0)`);
+        .style("transform", `translate3d(${snappedX}px, -20px, 0)`);
 
       mouseTooltip
         .style("display", "block")
@@ -529,7 +528,7 @@ const HeatMap = ({
         .ease(d3.easeCubicOut)
         .style(
           "transform",
-          `translate3d(${snappedX + 90}px, ${snappedY + 75}px, 0)`,
+          `translate3d(${snappedX + 70}px, ${snappedY + 20}px, 0)`,
         );
     });
 
@@ -576,13 +575,14 @@ const HeatMap = ({
   }, [colorScale, cellsRef]);
 
   return (
-    <>
+    <div className="relative w-full h-full bg-amber-700">
       <svg
         id="svgRef"
-        style={{
-          width: width,
-          height: height,
-        }}
+        className="w-full h-full"
+        // style={{
+        //   width,
+        //   height,
+        // }}
       />
 
       <div
@@ -597,7 +597,7 @@ const HeatMap = ({
         id="date-tooltip"
         className={`hidden pointer-events-none z-1000 w-30 text-center ${classes.tooltip}`}
       />
-    </>
+    </div>
   );
 };
 
@@ -657,22 +657,32 @@ const Container = () => {
     setColorSliderValue(maxValue * 0.4);
   }, [maxValue]);
 
-  const height = 600;
-  const width = 800;
+  const height = 500;
+  const width = 1200;
 
   return (
-    <div style={{ width: width }} className="flex flex-col bg-[#151b2b]">
-      <div className="flex justify-between w-50 h-10">
-        <div className="w-40">
-          <ColorSlider
-            value={colorSliderValue}
-            setValue={setColorSliderValue}
-            maxVal={maxValue}
-          />
+    <div
+      className="flex flex-col bg-[#151b2b] p-2.5"
+      style={{
+        width,
+        height,
+      }}
+    >
+      <div className="flex justify-end">
+        <div className="flex justify-between gap-5 py-1.5">
+          <div className="w-40">
+            <ColorSlider
+              value={colorSliderValue}
+              setValue={setColorSliderValue}
+              maxVal={maxValue}
+            />
+          </div>
+          <div className="w-40">
+            <DaysSelect setActiveDay={setDataDays} />
+          </div>
         </div>
-        <DaysSelect setActiveDay={setDataDays} />
       </div>
-      <div className="relative" style={{ height: height }}>
+      <div className="relative h-full w-full">
         <HeatMap
           data={data}
           placeholderN={placeholderN}
