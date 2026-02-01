@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import classes from "./graph.module.scss";
+import DropDownMenu from "./components/dropdownMenu";
 
 // Divide code into smaller chunks
 // Isolate logic
@@ -36,10 +37,11 @@ import classes from "./graph.module.scss";
    * 
  */
 
-interface DataObj {
+export interface DataObj {
   coin: string;
   date: Date;
   value: number;
+  openInterest: number;
 }
 
 interface DateGroup {
@@ -75,7 +77,7 @@ const ColorSlider = ({
       </label>
       <div style={{ position: "relative" }}>
         <div
-          className="absolute -bottom-8.5 px-2 py-1 mb-2 text-xs font-bold text-white transition-opacity bg-gray-500 rounded -translate-x-1/2 pointer-events-none"
+          className="absolute z-10 -bottom-8.5 px-2 py-1 mb-2 text-xs font-bold text-white transition-opacity bg-gray-500 rounded -translate-x-1/2 pointer-events-none"
           style={{
             left: `calc(${percent}% - 12px)`,
             opacity: `${viewVal ? "1" : "0"}`,
@@ -112,55 +114,73 @@ const DaysSelect = ({
 }: {
   setActiveDay: React.Dispatch<React.SetStateAction<number>>;
 }) => {
-  const [displayDays, setDisplayDays] = useState(false);
   const days = [
-    { label: "1 day", value: 1 },
-    { label: "1 week", value: 7 },
-    { label: "2 week", value: 14 },
-    { label: "30 day", value: 30 },
-    { label: "3 month", value: 90 },
-    { label: "6 month", value: 182 },
-    { label: "1 year", value: 365 },
+    "1 day",
+    "1 week",
+    "2 week",
+    "30 day",
+    "3 month",
+    "6 month",
+    "1 year",
   ];
 
-  const [label, setLabel] = useState("3 month");
+  const handleDays = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const text = (e.target as HTMLElement).textContent;
 
-  return (
-    <div
-      onClick={() => setDisplayDays(!displayDays)}
-      className="relative z-10 w-full text-white flex justify-center"
-    >
-      <button
-        className="cursor-pointer w-full h-full bg-[#151b2b] p-2 rounded-sm"
-        onClick={() => setDisplayDays(!displayDays)}
-        style={{ border: "1px solid gray" }}
-      >
-        {label}
-      </button>
-      <div
-        className="absolute flex flex-col items-left w-25 top-10 bg-[#151b2b] rounded-sm"
-        style={{
-          opacity: `${displayDays ? "1" : "0"}`,
-          visibility: `${displayDays ? "visible" : "hidden"}`,
-          border: "1px solid gray",
-        }}
-      >
-        {days.map(({ label, value }) => (
-          <button
-            key={value}
-            className="cursor-pointer text-left p-2 hover:bg-[rgba(123,133,160,0.597)]"
-            onClick={() => {
-              setActiveDay(value);
-              setDisplayDays(false);
-              setLabel(label);
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+    switch (text) {
+      case "1 day":
+        setActiveDay(1);
+        break;
+      case "1 week":
+        setActiveDay(7);
+        break;
+      case "2 week":
+        setActiveDay(14);
+        break;
+      case "30 day":
+        setActiveDay(30);
+        break;
+      case "3 month":
+        setActiveDay(90);
+        break;
+      case "6 month":
+        setActiveDay(182);
+        break;
+      case "1 year":
+        setActiveDay(365);
+        break;
+      default:
+        console.error(" -- testHeatMap > handleDays -- does not return a day");
+        setActiveDay(7);
+    }
+  };
+
+  useEffect(() => {
+    setActiveDay(30);
+  }, [setActiveDay]);
+
+  return <DropDownMenu data={days} action={handleDays} default={3} />;
+};
+
+const LiquidationTypeHandler = ({
+  setLiquidationType,
+}: {
+  setLiquidationType: React.Dispatch<React.SetStateAction<string>>;
+}) => {
+  const types = ["Open Interest", "Market Cap"];
+
+  const handleTypechange = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const text = (e.target as HTMLElement).textContent as string;
+
+    console.log("asd");
+    if (text.toLowerCase() === "open interest") {
+      setLiquidationType("openInterest");
+    } else {
+      setLiquidationType("value");
+    }
+  };
+
+  return <DropDownMenu data={types} action={handleTypechange} default={0} />;
 };
 
 const generateHeatmapData = (names: string[], days = 90) => {
@@ -188,11 +208,13 @@ const generateHeatmapData = (names: string[], days = 90) => {
     const date = timeOffset(i);
 
     names.forEach((name) => {
+      const priceClarity = Math.random() > 0.8 ? 2000 : 100;
+
       data.push({
         coin: name,
         date: date,
-
-        value: Math.floor(Math.random() * 1000) + (name === "BTC" ? 500 : 0),
+        value: Math.floor(Math.random() * 500) + priceClarity,
+        openInterest: Math.floor(Math.random() * 100000) + 50000,
       });
     });
   }
@@ -201,6 +223,7 @@ const generateHeatmapData = (names: string[], days = 90) => {
 
 const HeatMap = ({
   data,
+  liquidationType,
   placeholderN,
   dataDays,
   maxValue,
@@ -209,6 +232,7 @@ const HeatMap = ({
   height,
 }: {
   data: DataObj[];
+  liquidationType: DataObj["value"] | DataObj["openInterest"];
   placeholderN: string[];
   dataDays: number;
   maxValue: number;
@@ -254,10 +278,10 @@ const HeatMap = ({
   const valueLookup = useMemo(() => {
     const map = new Map();
     data.forEach((d) => {
-      map.set(`${d.date.getTime()}-${d.coin}`, d.value);
+      map.set(`${d.date.getTime()}-${d.coin}`, d[liquidationType]);
     });
     return map;
-  }, [data]);
+  }, [data, liquidationType]);
 
   useEffect(() => {
     if (!data) return;
@@ -271,7 +295,7 @@ const HeatMap = ({
 
     const chart = svgElement
       .append("g")
-      .attr("transform", `translate(${margins.left}, ${0})`)
+      .attr("transform", `translate(${margins.left}, 0)`)
       .style("width", innerWidth)
       .style("height", innerHeight);
 
@@ -308,8 +332,8 @@ const HeatMap = ({
       .attr("y", (d) => y(d.coin)!)
       .attr("width", cellWidth + 0.5)
       .attr("height", y.bandwidth())
-      .attr("data-value", (d) => d.value)
-      .attr("fill", (d) => colorScale(d.value))
+      .attr("data-value", (d) => d[liquidationType])
+      .attr("fill", (d) => colorScale(d[liquidationType]))
       .style("shape-rendering", "crispEdges");
 
     chart
@@ -516,7 +540,7 @@ const HeatMap = ({
         .transition()
         .duration(300)
         .ease(d3.easeCubicOut)
-        .style("transform", `translate3d(${snappedX}px, -20px, 0)`);
+        .style("transform", `translate3d(${snappedX + 5}px, -20px, 0)`);
 
       mouseTooltip
         .style("display", "block")
@@ -575,15 +599,8 @@ const HeatMap = ({
   }, [colorScale, cellsRef]);
 
   return (
-    <div className="relative w-full h-full bg-amber-700">
-      <svg
-        id="svgRef"
-        className="w-full h-full"
-        // style={{
-        //   width,
-        //   height,
-        // }}
-      />
+    <div className="relative w-full h-full">
+      <svg id="svgRef" className="w-full h-full" />
 
       <div
         id="mouse-tooltip"
@@ -640,7 +657,12 @@ const Container = () => {
   );
 
   // DaysSelect dropdown selector - displays data from today - dataKeys
-  const [dataDays, setDataDays] = useState(90);
+  const [dataDays, setDataDays] = useState(30);
+
+  // Open Interest / Market Cap;
+  const [liquidationType, setLiquidationType] = useState<
+    "value" | "openInterest"
+  >("openInterest");
 
   // current placeholder-data
   const data = useMemo(
@@ -649,8 +671,9 @@ const Container = () => {
   );
 
   // Find the max value for the domain
-  const maxValue = d3.max(data, (d) => d.value) || 1000;
+  const maxValue = d3.max(data, (d) => d[liquidationType]) || 1000;
 
+  console.log(liquidationType);
   const [colorSliderValue, setColorSliderValue] = useState<number>(0);
 
   useEffect(() => {
@@ -680,11 +703,15 @@ const Container = () => {
           <div className="w-40">
             <DaysSelect setActiveDay={setDataDays} />
           </div>
+          <div>
+            <LiquidationTypeHandler setLiquidationType={setLiquidationType} />
+          </div>
         </div>
       </div>
       <div className="relative h-full w-full">
         <HeatMap
           data={data}
+          liquidationType={liquidationType}
           placeholderN={placeholderN}
           dataDays={dataDays}
           maxValue={maxValue}
