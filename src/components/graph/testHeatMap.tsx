@@ -9,7 +9,7 @@ import LiquidationTypeHandler from "./components/liquidationTypeHandler";
 import generateHeatmapData from "./components/generateHeatmapData";
 import DaysSelect from "./components/daysSelect";
 import HeatMap from "./components/Heatmap";
-import DisplayColorOnlySlider from "./components/displayColorOnlySlider";
+import GradientSlider from "./components/gradientSlider";
 
 /**
  *
@@ -17,14 +17,11 @@ import DisplayColorOnlySlider from "./components/displayColorOnlySlider";
  * @returns
  *
  **  Important note for future updates
- * In theory, the only thing that you need to update is Data. (Located inside of HeatMap)
+ * In theory, the only thing that you need to update is Data. (Located inside of HeatMap.tsx => HeatMap)
  * Currently, stale data is created using generateHeatmapData.
  * Remove this function, and replace it with live data.
- * Only requirement for data is to have the following format:
+ * Only requirement for data is to have the following format: * see interface DataObj *
  *
- * see interface DataObj for required data-structure
- *
- * This is easy to confingure in code as well.
  * If date is in format Unix Timestamp: "timestamp": 1739777800000", simply update
  * uniqueDates to handle them with a new Date() format.
  * There might be minor adjustments needed, but most visualisation should be dynamic. This includes:
@@ -34,7 +31,6 @@ import DisplayColorOnlySlider from "./components/displayColorOnlySlider";
  * tooltip
  * slider
  * drop-down menu: DaysSelect
- *
  */
 
 export interface DataObj {
@@ -112,6 +108,9 @@ const Container = () => {
     setColorSliderValue(maxValue * 0.4);
   }, [maxValue]);
 
+  const [gradientLow, setGradientLow] = useState(0);
+  const [gradientHigh, setGradientHigh] = useState(0);
+
   const height = 500;
   const width = 900;
 
@@ -148,10 +147,17 @@ const Container = () => {
         colorSliderValue={colorSliderValue}
         height={height}
         width={width}
+        gradientLow={gradientLow}
+        gradientHigh={gradientHigh}
       />
 
       <div>
-        <DisplayColorOnlySlider />
+        <GradientSlider
+          gradientLow={gradientLow}
+          setGradientLow={setGradientLow}
+          gradientHigh={gradientHigh}
+          setGradientHigh={setGradientHigh}
+        />
       </div>
     </div>
   );

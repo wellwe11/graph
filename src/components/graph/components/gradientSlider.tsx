@@ -1,18 +1,17 @@
-import { useState } from "react";
-
-// "#38cdff", "#38ff38", "#ffe138", "#ff6d38",
-
-const DisplayColorOnlySlider = () => {
+const GradientSlider = ({
+  gradientLow,
+  setGradientLow,
+  gradientHigh,
+  setGradientHigh,
+}) => {
   const min = 0;
-  const max = 100;
-  const [minVal, setMinVal] = useState(0);
-  const [maxVal, setMaxVal] = useState(0);
+  const max = 95;
 
   return (
     <div className="relative w-50 h-8">
       <input
         className="absolute left-0 z-11 w-full 
-        cursor-pointer
+        cursor-ew-resize
         appearance-none 
         bg-transparent 
         pointer-events-none 
@@ -39,19 +38,19 @@ const DisplayColorOnlySlider = () => {
         type="range"
         min={min}
         max={max}
-        value={minVal}
+        value={gradientLow}
         onChange={(e) => {
-          const value = Math.min(Number(e.target.value), 100 - maxVal);
-          setMinVal(value);
+          const value = Math.min(Number(e.target.value), 90 - gradientHigh);
+          setGradientLow(value);
         }}
       />
       <div
         className="z-10 bg-gray-400 absolute left-0 h-full"
-        style={{ width: `${minVal}%` }}
+        style={{ width: `${gradientLow}%` }}
       />
       <div
         className="z-10 bg-gray-400 absolute right-0 h-full"
-        style={{ width: `${maxVal}%` }}
+        style={{ width: `${gradientHigh}%` }}
       />
 
       <div className="relative h-full w-full rounded border border-zinc-800 overflow-hidden">
@@ -76,7 +75,7 @@ const DisplayColorOnlySlider = () => {
 
       <input
         className="absolute top-0 right-0 z-11 w-full 
-        cursor-pointer
+        cursor-ew-resize
         appearance-none 
         bg-transparent 
         pointer-events-none 
@@ -104,15 +103,15 @@ const DisplayColorOnlySlider = () => {
         type="range"
         min={min}
         max={max}
-        value={maxVal}
+        value={gradientHigh}
         onChange={(e) => {
-          const value = Math.min(Number(e.target.value), 100 - minVal);
+          const value = Math.min(Number(e.target.value), 90 + gradientLow);
 
-          setMaxVal(value);
+          setGradientHigh(value);
         }}
       />
     </div>
   );
 };
 
-export default DisplayColorOnlySlider;
+export default GradientSlider;

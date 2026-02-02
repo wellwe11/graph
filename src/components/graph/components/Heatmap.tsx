@@ -15,6 +15,8 @@ const HeatMap = ({
   colorSliderValue,
   width,
   height,
+  gradientLow,
+  gradientHigh,
 }: {
   data: DataObj[];
   liquidationType: "value" | "openInterest";
@@ -342,7 +344,7 @@ const HeatMap = ({
       mouseTooltip
         .style("display", "block")
         .html(
-          `<strong>Liquidition traders</strong> <br /> ${coinAtMouse} - ${valAtMouse}`,
+          `<strong>Liquidated Traders</strong> <br /> ${coinAtMouse} - ${valAtMouse}`,
         )
         .transition()
         .duration(300)
@@ -382,6 +384,7 @@ const HeatMap = ({
     liquidationType,
   ]);
 
+  // Color slider
   useEffect(() => {
     if (!cellsRef.current) return;
 
@@ -395,19 +398,41 @@ const HeatMap = ({
         });
     } else {
       const timer = setTimeout(() => {
-        console.log("asd");
-        cellsRef
-          .current!.interrupt()
-
-          .attr("fill", function () {
-            const value = parseFloat(d3.select(this).attr("data-value"));
-            return colorScale(value);
-          });
+        cellsRef.current!.interrupt().attr("fill", function () {
+          const value = parseFloat(d3.select(this).attr("data-value"));
+          return colorScale(value);
+        });
       }, 300);
 
       return () => clearTimeout(timer);
     }
-  }, [colorScale, cellsRef]);
+  }, [colorScale, cellsRef, dataDays]);
+
+  const percentageScale = d3
+    .scaleLinear()
+    .domain([0, maxValue])
+    .range([0, 100]);
+
+  useEffect(() => {
+    if (!cellsRef.current) return;
+
+    const timer = setTimeout(() => {
+      cellsRef.current!.interrupt().attr("fill", function () {
+        const value = parseFloat(d3.select(this).attr("data-value"));
+
+        if (
+          Math.round(percentageScale(value)) < gradientLow ||
+          Math.round(percentageScale(value)) > 100 - gradientHigh
+        ) {
+          return "#000000";
+        } else {
+          return colorScale(value);
+        }
+      });
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [cellsRef, gradientHigh, gradientLow, colorScale, percentageScale]);
 
   return (
     <div style={{ position: "relative" }}>
