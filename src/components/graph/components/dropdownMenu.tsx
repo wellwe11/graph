@@ -31,17 +31,17 @@ const DropDownMenu = ({
     <div
       ref={containerRef}
       onClick={() => setDisplayDays(!displayDays)}
-      className="relative z-10 text-white flex justify-center items-center"
+      className="relative z-10 text-white"
     >
       <button
-        className="cursor-pointer bg-[#151b2b] rounded-sm h-8.5 px-5"
+        className="cursor-pointer bg-[#151b2b] rounded-sm h-8.5 px-5 w-full"
         onClick={() => setDisplayDays(!displayDays)}
         style={{ border: "1px solid gray" }}
       >
         {label}
       </button>
       <div
-        className="absolute text-nowrap flex flex-col items-left top-12 bg-[#151b2b] rounded-sm w-full"
+        className="absolute text-nowrap flex flex-col items-left top-10 bg-[#151b2b] rounded-sm w-full"
         style={{
           opacity: `${displayDays ? "1" : "0"}`,
           visibility: `${displayDays ? "visible" : "hidden"}`,

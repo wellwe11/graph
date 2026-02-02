@@ -11,30 +11,29 @@ import DropDownMenu from "./components/dropdownMenu";
 // tome-toolbar is not center
 
 /**
- * 
- * @param param0 
- * @returns 
- * 
+ *
+ * @param param0
+ * @returns
+ *
  **  Important note for future updates
-   * In theory, the only thing that you need to update is Data. (Located inside of HeatMap)
-   * Currently, stale data is created using generateHeatmapData.
-   * Only requirement for data is to have the following format:
-   * {
-    "coin": "someCoin", 
-    "date": "2026-01-21T10:54:53.426Z", 
-    "value": 449 
-    }
-   * This is easy to confingure in code as well. 
-   * If date is in format Unix Timestamp: "timestamp": 1739777800000", simply update
-   * uniqueDates to handle them with a new Date() format. 
-   * There might be minor adjustments needed, but most visualisation should be dynamic. This includes:
-   * Colors, 
-   * x-axis,
-   * y-axis,
-   * tooltip
-   * slider
-   * drop-down menu: DaysSelect
-   * 
+ * In theory, the only thing that you need to update is Data. (Located inside of HeatMap)
+ * Currently, stale data is created using generateHeatmapData.
+ * Remove this function, and replace it with live data.
+ * Only requirement for data is to have the following format:
+ *
+ * see interface DataObj for required data-structure
+ *
+ * This is easy to confingure in code as well.
+ * If date is in format Unix Timestamp: "timestamp": 1739777800000", simply update
+ * uniqueDates to handle them with a new Date() format.
+ * There might be minor adjustments needed, but most visualisation should be dynamic. This includes:
+ * Colors,
+ * x-axis,
+ * y-axis,
+ * tooltip
+ * slider
+ * drop-down menu: DaysSelect
+ *
  */
 
 export interface DataObj {
@@ -65,7 +64,7 @@ const ColorSlider = ({
   const [viewVal, setViewVal] = useState(false);
 
   // value-div. Calculate margin left to follow current set of value
-  const percent = (value / maxVal) * 170;
+  const percent = (value / maxVal) * 150;
 
   return (
     <div
@@ -79,7 +78,7 @@ const ColorSlider = ({
         <div
           className="absolute z-10 -bottom-8.5 px-2 py-1 mb-2 text-xs font-bold text-white transition-opacity bg-gray-500 rounded -translate-x-1/2 pointer-events-none"
           style={{
-            left: `calc(${percent}% - 12px)`,
+            left: `calc(${percent}%)`,
             opacity: `${viewVal ? "1" : "0"}`,
           }}
         >
@@ -174,7 +173,6 @@ const LiquidationTypeHandler = ({
   const handleTypechange = (e: React.MouseEvent<HTMLButtonElement>) => {
     const text = (e.target as HTMLElement).textContent as string;
 
-    console.log("asd");
     if (text.toLowerCase() === "open interest") {
       setLiquidationType("openInterest");
     } else {
@@ -589,17 +587,14 @@ const HeatMap = ({
 
   useEffect(() => {
     if (!cellsRef.current) return;
-    const timer = setTimeout(() => {
-      cellsRef
-        .current!.interrupt()
-        .transition()
-        .attr("fill", function () {
-          const value = parseFloat(d3.select(this).attr("data-value"));
-          return colorScale(value);
-        });
-    }, 25); // Adjust for quicker color-change-update. Currently 25 to avoid unnecessary throttling
 
-    return () => clearTimeout(timer);
+    cellsRef
+      .current!.interrupt()
+
+      .attr("fill", function () {
+        const value = parseFloat(d3.select(this).attr("data-value"));
+        return colorScale(value);
+      });
   }, [colorScale, cellsRef]);
 
   return (
@@ -681,6 +676,10 @@ const Container = () => {
     +maxValue * 0.4,
   );
 
+  useEffect(() => {
+    setColorSliderValue(maxValue * 0.4);
+  }, [maxValue]);
+
   const height = 500;
   const width = 1200;
 
@@ -702,9 +701,11 @@ const Container = () => {
             />
           </div>
 
-          <div className="flex gap-2.5">
+          <div className="flex gap-2.5 justify-center items-center">
             <DaysSelect setActiveDay={setDataDays} />
-            <LiquidationTypeHandler setLiquidationType={setLiquidationType} />
+            <div className="w-40">
+              <LiquidationTypeHandler setLiquidationType={setLiquidationType} />
+            </div>
           </div>
         </div>
       </div>
