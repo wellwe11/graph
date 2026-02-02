@@ -153,7 +153,7 @@ const HeatMap = ({
       interval = d3.timeHour.every(30);
       tickFormat = (d: d3.NumberValue) => d3.timeFormat("%d %b")(d as Date);
     } else if (dataDays <= 30) {
-      interval = d3.timeDay.every(2);
+      interval = d3.timeDay.every(4);
       tickFormat = (d: d3.NumberValue) => d3.timeFormat("%d %b")(d as Date);
     } else if (dataDays <= 90) {
       interval = d3.timeWeek.every(1);
@@ -173,7 +173,7 @@ const HeatMap = ({
 
     chart
       .append("g")
-      .attr("transform", `translate(0,${innerHeight})`)
+      .attr("transform", `translate(${cellWidth}, ${innerHeight})`)
       .call(
         d3
           .axisBottom(x)
@@ -185,7 +185,7 @@ const HeatMap = ({
       .attr("color", "#888")
       .selectAll("text")
       .style("font-size", "10px")
-      .style("text-anchor", "start");
+      .style("text-anchor", "middle");
 
     const listeningRect = chart
       .append("rect")
@@ -336,7 +336,7 @@ const HeatMap = ({
         .ease(d3.easeCubicOut)
         .style(
           "transform",
-          `translate3d(${snappedX}px, -${margins.top + 10}px, 0)`,
+          `translate3d(${snappedX - 25}px, -${margins.top + 10}px, 0)`,
         );
 
       mouseTooltip
@@ -349,7 +349,7 @@ const HeatMap = ({
         .ease(d3.easeCubicOut)
         .style(
           "transform",
-          `translate3d(${snappedX + 85}px, ${snappedY + 15}px, 0)`,
+          `translate3d(${snappedX + 65}px, ${snappedY + 30}px, 0)`,
         );
     });
 

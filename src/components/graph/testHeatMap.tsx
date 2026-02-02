@@ -120,7 +120,7 @@ const Container = () => {
       <div className="flex justify-center">
         <div
           className="flex justify-between gap-5 py-1.5"
-          style={{ width, paddingLeft: "50px", paddingRight: "50px" }}
+          style={{ width, paddingLeft: "35px", paddingRight: "35px" }}
         >
           <div className="w-40">
             <ColorSlider
