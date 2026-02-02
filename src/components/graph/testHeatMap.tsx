@@ -116,15 +116,12 @@ const Container = () => {
   const width = 900;
 
   return (
-    <div
-      className="flex flex-col bg-[#151b2b] p-2.5"
-      style={{
-        width,
-        height,
-      }}
-    >
-      <div className="flex justify-end">
-        <div className="flex justify-between gap-5 py-1.5 px-7">
+    <div className="flex flex-col bg-[#151b2b] p-2.5 w-fit h-fit">
+      <div className="flex justify-center">
+        <div
+          className="flex justify-between gap-5 py-1.5"
+          style={{ width, paddingLeft: "50px", paddingRight: "50px" }}
+        >
           <div className="w-40">
             <ColorSlider
               value={colorSliderValue}

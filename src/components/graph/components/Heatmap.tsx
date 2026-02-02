@@ -35,7 +35,7 @@ const HeatMap = ({
   > | null>(null);
 
   const margins = useMemo(
-    () => ({ top: 50, bottom: 50, left: 50, right: 50 }),
+    () => ({ top: 15, bottom: 25, left: 35, right: 35 }),
     [],
   );
 
@@ -111,7 +111,7 @@ const HeatMap = ({
 
     const chart = svgElement
       .append("g")
-      .attr("transform", `translate(${margins.left}, 0)`);
+      .attr("transform", `translate(${margins.left}, ${margins.top})`);
 
     cellsRef.current = chart
       .selectAll(".cell")
@@ -323,7 +323,10 @@ const HeatMap = ({
         .transition()
         .duration(300)
         .ease(d3.easeCubicOut)
-        .style("transform", `translate3d(10px, ${snappedY - 10}px, 0)`);
+        .style(
+          "transform",
+          `translate3d(-7.5px, ${snappedY + margins.top - 10}px, 0)`,
+        );
 
       dateTooltip
         .style("display", "block")
@@ -331,7 +334,10 @@ const HeatMap = ({
         .transition()
         .duration(300)
         .ease(d3.easeCubicOut)
-        .style("transform", `translate3d(${snappedX + 10}px, -100px, 0)`);
+        .style(
+          "transform",
+          `translate3d(${snappedX}px, -${margins.top + 10}px, 0)`,
+        );
 
       mouseTooltip
         .style("display", "block")
@@ -404,8 +410,8 @@ const HeatMap = ({
   }, [colorScale, cellsRef]);
 
   return (
-    <div style={{ width, height, position: "relative" }}>
-      <svg id="svgRef" style={{ width: "100%", height: "100%" }} />
+    <div style={{ position: "relative" }}>
+      <svg id="svgRef" />
 
       <div
         id="mouse-tooltip"
