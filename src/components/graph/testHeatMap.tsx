@@ -64,7 +64,9 @@ const ColorSlider = ({
   const [viewVal, setViewVal] = useState(false);
 
   // value-div. Calculate margin left to follow current set of value
-  const percent = (value / maxVal) * 150;
+  const percent = Math.round((value / maxVal) * 155);
+
+  console.log(percent);
 
   return (
     <div
@@ -78,7 +80,7 @@ const ColorSlider = ({
         <div
           className="absolute z-10 -bottom-8.5 px-2 py-1 mb-2 text-xs font-bold text-white transition-opacity bg-gray-500 rounded -translate-x-1/2 pointer-events-none"
           style={{
-            left: `calc(${percent}%)`,
+            left: `calc(${percent > 5 ? percent : 5}%)`,
             opacity: `${viewVal ? "1" : "0"}`,
           }}
         >
