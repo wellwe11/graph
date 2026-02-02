@@ -165,7 +165,9 @@ const DaysSelect = ({
 const LiquidationTypeHandler = ({
   setLiquidationType,
 }: {
-  setLiquidationType: React.Dispatch<React.SetStateAction<string>>;
+  setLiquidationType: React.Dispatch<
+    React.SetStateAction<"value" | "openInterest">
+  >;
 }) => {
   const types = ["Open Interest", "Market Cap"];
 
@@ -232,7 +234,7 @@ const HeatMap = ({
   height,
 }: {
   data: DataObj[];
-  liquidationType: DataObj["value"] | DataObj["openInterest"];
+  liquidationType: "value" | "openInterest";
   placeholderN: string[];
   dataDays: number;
   maxValue: number;
@@ -278,7 +280,10 @@ const HeatMap = ({
   const valueLookup = useMemo(() => {
     const map = new Map();
     data.forEach((d) => {
-      map.set(`${d.date.getTime()}-${d.coin}`, d[liquidationType]);
+      map.set(
+        `${d.date.getTime()}-${d.coin}`,
+        d[liquidationType as keyof DataObj],
+      );
     });
     return map;
   }, [data, liquidationType]);
@@ -574,7 +579,6 @@ const HeatMap = ({
     placeholderN,
     dataDays,
     valueLookup,
-
     innerHeight,
     innerWidth,
     margins.top,
@@ -673,12 +677,9 @@ const Container = () => {
   // Find the max value for the domain
   const maxValue = d3.max(data, (d) => d[liquidationType]) || 1000;
 
-  console.log(liquidationType);
-  const [colorSliderValue, setColorSliderValue] = useState<number>(0);
-
-  useEffect(() => {
-    setColorSliderValue(maxValue * 0.4);
-  }, [maxValue]);
+  const [colorSliderValue, setColorSliderValue] = useState<number>(
+    +maxValue * 0.4,
+  );
 
   const height = 500;
   const width = 1200;
