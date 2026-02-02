@@ -3,6 +3,11 @@ const GradientSlider = ({
   setGradientLow,
   gradientHigh,
   setGradientHigh,
+}: {
+  gradientLow: number;
+  setGradientLow: React.Dispatch<React.SetStateAction<number>>;
+  gradientHigh: number;
+  setGradientHigh: React.Dispatch<React.SetStateAction<number>>;
 }) => {
   const min = 0;
   const max = 95;
@@ -53,7 +58,7 @@ const GradientSlider = ({
         style={{ width: `${gradientHigh}%` }}
       />
 
-      <div className="relative h-full w-full rounded border border-zinc-800 overflow-hidden">
+      <div className="relative h-full w-full rounded border border-zinc-800">
         <svg width="100%" height="100%" preserveAspectRatio="none">
           <defs>
             <linearGradient

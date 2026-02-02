@@ -148,10 +148,12 @@ const Container = () => {
         height={height}
         width={width}
         gradientLow={gradientLow}
+        setGradientLow={setGradientLow}
+        setGradientHigh={setGradientHigh}
         gradientHigh={gradientHigh}
       />
 
-      <div>
+      <div className="flex justify-center items-center">
         <GradientSlider
           gradientLow={gradientLow}
           setGradientLow={setGradientLow}

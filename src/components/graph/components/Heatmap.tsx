@@ -16,7 +16,9 @@ const HeatMap = ({
   width,
   height,
   gradientLow,
+  setGradientLow,
   gradientHigh,
+  setGradientHigh,
 }: {
   data: DataObj[];
   liquidationType: "value" | "openInterest";
@@ -26,6 +28,10 @@ const HeatMap = ({
   colorSliderValue: number;
   width: number;
   height: number;
+  gradientLow: number;
+  setGradientLow: React.Dispatch<React.SetStateAction<number>>;
+  gradientHigh: number;
+  setGradientHigh: React.Dispatch<React.SetStateAction<number>>;
 }) => {
   const prevCoinAtMouse = useRef<string | null>(null);
   const prevDateAtMouse = useRef<Date | null>(null);
@@ -388,6 +394,9 @@ const HeatMap = ({
   useEffect(() => {
     if (!cellsRef.current) return;
 
+    setGradientLow(0);
+    setGradientHigh(0);
+
     if (dataDays < 90) {
       cellsRef
         .current!.interrupt()
@@ -406,8 +415,9 @@ const HeatMap = ({
 
       return () => clearTimeout(timer);
     }
-  }, [colorScale, cellsRef, dataDays]);
+  }, [colorScale, cellsRef, dataDays, setGradientLow, setGradientHigh]);
 
+  // gradient-slider
   const percentageScale = d3
     .scaleLinear()
     .domain([0, maxValue])
