@@ -393,6 +393,7 @@ const HeatMap = ({
   // Color slider
   useEffect(() => {
     if (!cellsRef.current) return;
+    console.log("asd");
 
     setGradientLow(0);
     setGradientHigh(0);
