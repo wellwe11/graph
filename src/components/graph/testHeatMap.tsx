@@ -701,10 +701,9 @@ const Container = () => {
               maxVal={maxValue}
             />
           </div>
-          <div className="w-40">
+
+          <div className="flex gap-2.5">
             <DaysSelect setActiveDay={setDataDays} />
-          </div>
-          <div>
             <LiquidationTypeHandler setLiquidationType={setLiquidationType} />
           </div>
         </div>
