@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import * as d3 from "d3";
 
-import classes from "./graph.module.scss";
+// import classes from "./graph.module.scss";
 
 import ColorSlider from "./components/colorSlider";
 import LiquidationTypeHandler from "./components/liquidationTypeHandler";

@@ -1,9 +1,8 @@
-import * as d3 from "d3";
 import { useState } from "react";
 
 // "#38cdff", "#38ff38", "#ffe138", "#ff6d38",
 
-const DisplayColorOnlySlider = ({}) => {
+const DisplayColorOnlySlider = () => {
   const min = 0;
   const max = 100;
   const [minVal, setMinVal] = useState(0);
