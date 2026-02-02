@@ -588,13 +588,28 @@ const HeatMap = ({
   useEffect(() => {
     if (!cellsRef.current) return;
 
-    cellsRef
-      .current!.interrupt()
+    if (dataDays < 90) {
+      cellsRef
+        .current!.interrupt()
 
-      .attr("fill", function () {
-        const value = parseFloat(d3.select(this).attr("data-value"));
-        return colorScale(value);
-      });
+        .attr("fill", function () {
+          const value = parseFloat(d3.select(this).attr("data-value"));
+          return colorScale(value);
+        });
+    } else {
+      const timer = setTimeout(() => {
+        console.log("asd");
+        cellsRef
+          .current!.interrupt()
+
+          .attr("fill", function () {
+            const value = parseFloat(d3.select(this).attr("data-value"));
+            return colorScale(value);
+          });
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
   }, [colorScale, cellsRef]);
 
   return (
