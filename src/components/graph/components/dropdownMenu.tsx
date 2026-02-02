@@ -31,17 +31,17 @@ const DropDownMenu = ({
     <div
       ref={containerRef}
       onClick={() => setDisplayDays(!displayDays)}
-      className="relative z-10 text-white flex justify-center"
+      className="relative z-10 text-white flex justify-center items-center"
     >
       <button
-        className="cursor-pointer px-2.5 py-1 w-full bg-[#151b2b] rounded-sm"
+        className="cursor-pointer bg-[#151b2b] rounded-sm h-8.5 px-5"
         onClick={() => setDisplayDays(!displayDays)}
         style={{ border: "1px solid gray" }}
       >
         {label}
       </button>
       <div
-        className="absolute flex flex-col items-left w-full top-13 bg-[#151b2b] rounded-sm"
+        className="absolute text-nowrap flex flex-col items-left top-12 bg-[#151b2b] rounded-sm w-full"
         style={{
           opacity: `${displayDays ? "1" : "0"}`,
           visibility: `${displayDays ? "visible" : "hidden"}`,
@@ -51,7 +51,7 @@ const DropDownMenu = ({
         {data.map((a, i) => (
           <button
             key={i}
-            className="cursor-pointer text-left p-1.5 hover:bg-[rgba(123,133,160,0.597)]"
+            className="cursor-pointer text-left px-2.5 py-1 hover:bg-[rgba(123,133,160,0.597)]"
             onClick={(e) => {
               setDisplayDays(false);
               setLabel(a);
