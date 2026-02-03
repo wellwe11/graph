@@ -420,7 +420,7 @@ const HeatMap = ({
   const visualScale = d3
     .scaleLinear()
     .domain([0, colorSchemeValues.low, colorSchemeValues.medium, maxValue])
-    .range([0, 33, 66, 100]);
+    .range([0, 40, 77, 100]);
 
   useEffect(() => {
     if (!cellsRef.current) return;

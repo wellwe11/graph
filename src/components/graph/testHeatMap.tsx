@@ -143,9 +143,17 @@ const Container = () => {
   };
 
   const handleColorSlide = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    startTransition(() => {
+      setGradientLow(0);
+      setGradientHigh(0);
+      setColorSliderValue(Number(e.target.value));
+    });
+  };
+
+  const handleDayChange = (n) => {
+    setDataDays(n);
     setGradientLow(0);
     setGradientHigh(0);
-    setColorSliderValue(Number(e.target.value));
   };
 
   const height = 500;
@@ -167,7 +175,7 @@ const Container = () => {
           </div>
 
           <div className="flex gap-2.5 justify-center items-center">
-            <DaysSelect setActiveDay={setDataDays} />
+            <DaysSelect setActiveDay={handleDayChange} />
             <div className="w-40">
               <LiquidationTypeHandler handler={liquidationTypeChangeHandler} />
             </div>
