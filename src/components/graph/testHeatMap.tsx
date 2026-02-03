@@ -47,9 +47,9 @@ export interface DateGroup {
   records: DataObj[];
 }
 
-const HeatMapWrapper = () => {
-  // isolated heatmap-logic
-};
+// const HeatMapWrapper = () => {
+//   // isolated heatmap-logic
+// };
 
 const Container = () => {
   // placeholder names
@@ -112,6 +112,8 @@ const Container = () => {
   );
 
   const [isPending, startTransition] = useTransition();
+
+  console.log(isPending);
 
   const [gradientLow, setGradientLow] = useState(0);
   const [gradientHigh, setGradientHigh] = useState(0);
