@@ -113,7 +113,7 @@ const Container = () => {
 
   const [isPending, startTransition] = useTransition();
 
-  console.log(isPending);
+  console.log(isPending); // for vercel to stfu
 
   const [gradientLow, setGradientLow] = useState(0);
   const [gradientHigh, setGradientHigh] = useState(0);
@@ -135,8 +135,6 @@ const Container = () => {
 
       const newVal = d3.max(data, (d) => d[type]) || 1000;
       setMaxval(newVal);
-
-      console.log(newVal);
 
       setColorSliderValue(+newVal * 0.6);
       setGradientLow(0);

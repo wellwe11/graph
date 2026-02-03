@@ -417,10 +417,10 @@ const HeatMap = ({
   }, [colorScale, cellsRef, dataDays]);
 
   // gradient-slider
-  const percentageScale = d3
+  const visualScale = d3
     .scaleLinear()
-    .domain([0, maxValue])
-    .range([0, 100]);
+    .domain([0, colorSchemeValues.low, colorSchemeValues.medium, maxValue])
+    .range([0, 33, 66, 100]);
 
   useEffect(() => {
     if (!cellsRef.current) return;
@@ -428,11 +428,9 @@ const HeatMap = ({
     const timer = setTimeout(() => {
       cellsRef.current!.interrupt().attr("fill", function () {
         const value = parseFloat(d3.select(this).attr("data-value"));
+        const visualPos = visualScale(value);
 
-        if (
-          Math.round(percentageScale(value)) < gradientLow ||
-          Math.round(percentageScale(value)) > 100 - gradientHigh
-        ) {
+        if (visualPos < gradientLow || visualPos > 101 - gradientHigh) {
           return "#000000";
         } else {
           return colorScale(value);
@@ -441,7 +439,14 @@ const HeatMap = ({
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [cellsRef, gradientHigh, gradientLow, colorScale, percentageScale]);
+  }, [
+    cellsRef,
+    gradientHigh,
+    gradientLow,
+    colorScale,
+    visualScale,
+    colorSliderValue,
+  ]);
 
   return (
     <div style={{ position: "relative" }}>
