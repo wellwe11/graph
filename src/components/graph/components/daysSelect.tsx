@@ -1,10 +1,9 @@
-import { useEffect } from "react";
 import DropDownMenu from "./dropdownMenu";
 
 const DaysSelect = ({
   setActiveDay,
 }: {
-  setActiveDay: React.Dispatch<React.SetStateAction<number>>;
+  setActiveDay: (days: number) => void;
 }) => {
   const days = [
     "1 day",
@@ -18,6 +17,7 @@ const DaysSelect = ({
 
   const handleDays = (e: React.MouseEvent<HTMLButtonElement>) => {
     const text = (e.target as HTMLElement).textContent;
+    console.log("asd");
 
     switch (text) {
       case "1 day":
@@ -46,10 +46,6 @@ const DaysSelect = ({
         setActiveDay(7);
     }
   };
-
-  useEffect(() => {
-    setActiveDay(30);
-  }, [setActiveDay]);
 
   return <DropDownMenu data={days} action={handleDays} default={3} />;
 };

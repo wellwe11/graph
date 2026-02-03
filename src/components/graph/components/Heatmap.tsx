@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import * as d3 from "d3";
 
@@ -16,9 +16,8 @@ const HeatMap = ({
   width,
   height,
   gradientLow,
-  setGradientLow,
+
   gradientHigh,
-  setGradientHigh,
 }: {
   data: DataObj[];
   liquidationType: "value" | "openInterest";
@@ -29,9 +28,8 @@ const HeatMap = ({
   width: number;
   height: number;
   gradientLow: number;
-  setGradientLow: React.Dispatch<React.SetStateAction<number>>;
+
   gradientHigh: number;
-  setGradientHigh: React.Dispatch<React.SetStateAction<number>>;
 }) => {
   const prevCoinAtMouse = useRef<string | null>(null);
   const prevDateAtMouse = useRef<Date | null>(null);
@@ -53,7 +51,7 @@ const HeatMap = ({
   const colorSchemeValues = useMemo(
     () => ({
       low: maxValue - colorSliderValue * 0.5,
-      medium: maxValue - colorSliderValue * 1.5,
+      medium: maxValue - colorSliderValue * 0.8,
     }),
     [colorSliderValue, maxValue],
   );
@@ -81,6 +79,7 @@ const HeatMap = ({
 
   useEffect(() => {
     if (!data) return;
+    console.log(maxValue, liquidationType);
 
     const svgElement = d3
       .select("#svgRef")
@@ -393,10 +392,6 @@ const HeatMap = ({
   // Color slider
   useEffect(() => {
     if (!cellsRef.current) return;
-    console.log("asd");
-
-    setGradientLow(0);
-    setGradientHigh(0);
 
     if (dataDays < 90) {
       cellsRef
@@ -416,7 +411,7 @@ const HeatMap = ({
 
       return () => clearTimeout(timer);
     }
-  }, [colorScale, cellsRef, dataDays, setGradientLow, setGradientHigh]);
+  }, [colorScale, cellsRef, dataDays]);
 
   // gradient-slider
   const percentageScale = d3

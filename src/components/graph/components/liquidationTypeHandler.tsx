@@ -1,25 +1,13 @@
 import DropDownMenu from "./dropdownMenu";
 
 const LiquidationTypeHandler = ({
-  setLiquidationType,
+  handler,
 }: {
-  setLiquidationType: React.Dispatch<
-    React.SetStateAction<"value" | "openInterest">
-  >;
+  handler: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }) => {
   const types = ["Open Interest", "Market Cap"];
 
-  const handleTypechange = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const text = (e.target as HTMLElement).textContent as string;
-
-    if (text.toLowerCase() === "open interest") {
-      setLiquidationType("openInterest");
-    } else {
-      setLiquidationType("value");
-    }
-  };
-
-  return <DropDownMenu data={types} action={handleTypechange} default={0} />;
+  return <DropDownMenu data={types} action={handler} default={0} />;
 };
 
 export default LiquidationTypeHandler;

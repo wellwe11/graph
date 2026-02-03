@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import * as d3 from "d3";
 
@@ -98,18 +98,43 @@ const Container = () => {
   );
 
   // Find the max value for the domain
-  const maxValue = d3.max(data, (d) => d[liquidationType]) || 1000;
+  const initialMaxVal = d3.max(data, (d) => d[liquidationType]) || 1000;
+  const [maxValue, setMaxval] = useState(() => initialMaxVal);
 
   const [colorSliderValue, setColorSliderValue] = useState<number>(
     +maxValue * 0.4,
   );
 
-  useEffect(() => {
-    setColorSliderValue(maxValue * 0.4);
-  }, [maxValue]);
+  const [isPending, startTransition] = useTransition();
 
   const [gradientLow, setGradientLow] = useState(0);
   const [gradientHigh, setGradientHigh] = useState(0);
+
+  const liquidationTypeChangeHandler = (
+    e: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    startTransition(() => {
+      const text = (e.target as HTMLElement).textContent as string;
+      let type;
+
+      if (text.toLowerCase() === "open interest") {
+        type = "openInterest";
+      } else {
+        type = "value";
+      }
+
+      setLiquidationType(type);
+
+      const newVal = d3.max(data, (d) => d[type]) || 1000;
+      setMaxval(newVal);
+
+      console.log(newVal);
+
+      setColorSliderValue(+newVal * 0.6);
+      setGradientLow(0);
+      setGradientHigh(0);
+    });
+  };
 
   const height = 500;
   const width = 900;
@@ -132,7 +157,7 @@ const Container = () => {
           <div className="flex gap-2.5 justify-center items-center">
             <DaysSelect setActiveDay={setDataDays} />
             <div className="w-40">
-              <LiquidationTypeHandler setLiquidationType={setLiquidationType} />
+              <LiquidationTypeHandler handler={liquidationTypeChangeHandler} />
             </div>
           </div>
         </div>
@@ -140,6 +165,7 @@ const Container = () => {
 
       <HeatMap
         data={data}
+        isPending={isPending}
         liquidationType={liquidationType}
         placeholderN={placeholderN}
         dataDays={dataDays}
@@ -148,8 +174,6 @@ const Container = () => {
         height={height}
         width={width}
         gradientLow={gradientLow}
-        setGradientLow={setGradientLow}
-        setGradientHigh={setGradientHigh}
         gradientHigh={gradientHigh}
       />
 

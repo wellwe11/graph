@@ -10,13 +10,14 @@ const ColorSlider = ({
   setValue: React.Dispatch<React.SetStateAction<number>>;
   maxVal: number;
 }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValue(Number(e.target.value));
-  };
   const [viewVal, setViewVal] = useState(false);
 
   // value-div. Calculate margin left to follow current set of value
-  const percent = Math.round((value / maxVal) * 155);
+  const percent = Math.round((value / maxVal) * 100);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(Number(e.target.value));
+  };
 
   return (
     <div
@@ -28,10 +29,11 @@ const ColorSlider = ({
       </label>
       <div style={{ position: "relative" }}>
         <div
-          className="absolute z-10 -bottom-8.5 px-2 py-1 mb-2 text-xs font-bold text-white transition-opacity bg-gray-500 rounded -translate-x-1/2 pointer-events-none"
+          className="absolute z-10 -bottom-8.5 px-2 py-1 mb-2 text-xs font-bold text-white bg-gray-500 rounded -translate-x-1/2 pointer-events-none"
           style={{
-            left: `calc(${percent > 5 ? percent : 5}%)`,
+            left: `calc(${percent > 5 && percent <= 100 ? percent : 5}%)`,
             opacity: `${viewVal ? "1" : "0"}`,
+            transition: "left 0.1s ease, opacity, 0.3s ease",
           }}
         >
           {Math.round(value)}
@@ -40,7 +42,7 @@ const ColorSlider = ({
           id="slider"
           type="range"
           min="100"
-          max={maxVal * 0.6}
+          max={maxVal}
           value={value}
           onChange={handleChange}
           className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer 
@@ -51,8 +53,7 @@ const ColorSlider = ({
           [&::-webkit-slider-thumb]:rounded-full 
           [&::-webkit-slider-thumb]:bg-gray-600 
           [&::-webkit-slider-thumb]:border-2 
-          [&::-webkit-slider-thumb]:border-white 
-          
+          [&::-webkit-slider-thumb]:border-white
           "
         />
       </div>
