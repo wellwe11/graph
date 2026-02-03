@@ -49,8 +49,8 @@ const HeatMap = ({
 
   const colorSchemeValues = useMemo(
     () => ({
-      low: maxValue - colorSliderValue * 0.2,
-      medium: maxValue - colorSliderValue * 0.5,
+      low: maxValue - colorSliderValue,
+      medium: maxValue - colorSliderValue,
     }),
     [colorSliderValue, maxValue],
   );

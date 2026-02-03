@@ -69,8 +69,8 @@ const GradientSlider = ({
               y2="0%"
             >
               <stop offset="0%" stopColor="#38cdff" />
-              <stop offset="33%" stopColor="#38ff38" />
-              <stop offset="66%" stopColor="#ffe138" />
+              <stop offset="40%" stopColor="#38ff38" />
+              <stop offset="77%" stopColor="#ffe138" />
               <stop offset="100%" stopColor="#ff6d38" />
             </linearGradient>
           </defs>
