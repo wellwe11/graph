@@ -150,7 +150,7 @@ const Container = () => {
     });
   };
 
-  const handleDayChange = (n) => {
+  const handleDayChange = (n: number) => {
     setDataDays(n);
     setGradientLow(0);
     setGradientHigh(0);
