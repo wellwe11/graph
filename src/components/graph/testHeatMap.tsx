@@ -11,6 +11,8 @@ import DaysSelect from "./components/daysSelect";
 import HeatMap from "./components/Heatmap";
 import GradientSlider from "./components/gradientSlider";
 
+// Next step: Create wrappers for main-component to help clean up code. Then it's done
+
 /**
  *
  * @param param0
@@ -44,6 +46,10 @@ export interface DateGroup {
   date: Date;
   records: DataObj[];
 }
+
+const HeatMapWrapper = () => {
+  // isolated heatmap-logic
+};
 
 const Container = () => {
   // placeholder names
@@ -102,7 +108,7 @@ const Container = () => {
   const [maxValue, setMaxval] = useState(() => initialMaxVal);
 
   const [colorSliderValue, setColorSliderValue] = useState<number>(
-    +maxValue * 0.4,
+    +maxValue * 0.6,
   );
 
   const [isPending, startTransition] = useTransition();
@@ -115,7 +121,7 @@ const Container = () => {
   ) => {
     startTransition(() => {
       const text = (e.target as HTMLElement).textContent as string;
-      let type;
+      let type: "value" | "openInterest";
 
       if (text.toLowerCase() === "open interest") {
         type = "openInterest";
@@ -136,6 +142,12 @@ const Container = () => {
     });
   };
 
+  const handleColorSlide = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setGradientLow(0);
+    setGradientHigh(0);
+    setColorSliderValue(Number(e.target.value));
+  };
+
   const height = 500;
   const width = 900;
 
@@ -149,7 +161,7 @@ const Container = () => {
           <div className="w-40">
             <ColorSlider
               value={colorSliderValue}
-              setValue={setColorSliderValue}
+              setValue={handleColorSlide}
               maxVal={maxValue}
             />
           </div>
@@ -165,7 +177,6 @@ const Container = () => {
 
       <HeatMap
         data={data}
-        isPending={isPending}
         liquidationType={liquidationType}
         placeholderN={placeholderN}
         dataDays={dataDays}

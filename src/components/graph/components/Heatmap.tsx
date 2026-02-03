@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import * as d3 from "d3";
 
@@ -16,7 +16,6 @@ const HeatMap = ({
   width,
   height,
   gradientLow,
-
   gradientHigh,
 }: {
   data: DataObj[];
@@ -50,8 +49,8 @@ const HeatMap = ({
 
   const colorSchemeValues = useMemo(
     () => ({
-      low: maxValue - colorSliderValue * 0.5,
-      medium: maxValue - colorSliderValue * 0.8,
+      low: maxValue - colorSliderValue * 0.2,
+      medium: maxValue - colorSliderValue * 0.5,
     }),
     [colorSliderValue, maxValue],
   );
@@ -61,7 +60,12 @@ const HeatMap = ({
       d3
         .scaleLinear<string>()
         .domain([0, colorSchemeValues.low, colorSchemeValues.medium, maxValue])
-        .range(["#38cdff", "#38ff38", "#ffe138", "#ff6d38"]),
+        .range([
+          "rgb(50, 163, 255)",
+          "rgb(50, 255, 163)",
+          "rgb(252, 255, 50)",
+          "rgb(255, 132, 50)",
+        ]),
     [colorSchemeValues, maxValue],
   );
 
@@ -79,7 +83,6 @@ const HeatMap = ({
 
   useEffect(() => {
     if (!data) return;
-    console.log(maxValue, liquidationType);
 
     const svgElement = d3
       .select("#svgRef")

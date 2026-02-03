@@ -7,17 +7,13 @@ const ColorSlider = ({
   maxVal = 700,
 }: {
   value: number;
-  setValue: React.Dispatch<React.SetStateAction<number>>;
+  setValue: (e: React.ChangeEvent<HTMLInputElement>) => void;
   maxVal: number;
 }) => {
   const [viewVal, setViewVal] = useState(false);
 
   // value-div. Calculate margin left to follow current set of value
   const percent = Math.round((value / maxVal) * 100);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValue(Number(e.target.value));
-  };
 
   return (
     <div
@@ -44,7 +40,7 @@ const ColorSlider = ({
           min="100"
           max={maxVal}
           value={value}
-          onChange={handleChange}
+          onChange={setValue}
           className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer 
           accent-gray-600
           [&::-webkit-slider-thumb]:appearance-none 
