@@ -111,9 +111,8 @@ const Container = () => {
     +maxValue * 0.6,
   );
 
-  const [isPending, startTransition] = useTransition();
-
-  console.log(isPending); // for vercel to stfu
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_isPending, startTransition] = useTransition();
 
   const [gradientLow, setGradientLow] = useState(0);
   const [gradientHigh, setGradientHigh] = useState(0);
